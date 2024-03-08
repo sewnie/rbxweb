@@ -67,7 +67,7 @@ func GetClientVersion(bt BinaryType, channel string) (*ClientVersion, error) {
 		ep += "/channel/" + channel
 	}
 
-	err := rbxweb.Request("GET", rbxweb.GetURL("clientsettingscdn", ep, nil), nil, &cv)
+	err := rbxweb.Request("GET", rbxweb.GetURL("clientsettings", ep, nil), nil, &cv)
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +87,7 @@ func GetUserChannel(bt *BinaryType) (*UserChannel, error) {
 	}
 
 	err := rbxweb.Request("GET",
-		rbxweb.GetURL("clientsettingscdn", "/v2/user-channel", q), nil, &uc)
+		rbxweb.GetURL("clientsettings", "/v2/user-channel", q), nil, &uc)
 	if err != nil {
 		return nil, err
 	}
