@@ -11,7 +11,7 @@ type UserID int64
 type AuthenticatedUser struct {
 	ID          UserID `json:"id"`
 	Name        string `json:"name"`
-	DisplayName string `json":displayName"`
+	DisplayName string `json:"displayName"`
 }
 
 // GetAuthenticated returns the minimal authenticated user.

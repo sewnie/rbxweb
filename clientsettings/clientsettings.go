@@ -49,6 +49,7 @@ const (
 	BoundToPublicChannel  AssignmentType = "BoundToPublicChannel"
 )
 
+// UserChannel implements the UserChannelResponse API model.
 type UserChannel struct {
 	Channel    string         `json:"channelName"`
 	Assignment AssignmentType `json:"channelAssignmentType"`
@@ -66,7 +67,7 @@ func GetClientVersion(bt BinaryType, channel string) (*ClientVersion, error) {
 		ep += "/channel/" + channel
 	}
 
-	err := rbxweb.Request("GET", "clientsettingscdn", ep, &cv)
+	err := rbxweb.Request("GET", rbxweb.GetURL("clientsettingscdn", ep, nil), nil, &cv)
 	if err != nil {
 		return nil, err
 	}
