@@ -2,11 +2,10 @@
 package rbxweb
 
 import (
-	"fmt"
-	"log/slog"
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
 )
