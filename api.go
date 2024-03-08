@@ -2,6 +2,8 @@
 package rbxweb
 
 import (
+	"fmt"
+	"log/slog"
 	"bytes"
 	"encoding/json"
 	"errors"
@@ -43,13 +45,13 @@ func Request(method, url string, body, data interface{}) error {
 
 	dec := json.NewDecoder(resp.Body)
 
-	if resp.StatusCode >= http.StatusOK {
-		// Return the given API error only if the decoder succeeded
+	if resp.StatusCode != http.StatusOK {
+		// Return API error only if such error exists
 		e := new(errorsResponse)
-		if err := dec.Decode(e); err != nil {
-			return err
+		if err := dec.Decode(e); err == nil {
+			return e
 		}
-		return e
+		return fmt.Errorf("%w: %s", ErrBadStatus, resp.Status)
 	}
 
 	if data != nil {
