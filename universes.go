@@ -15,15 +15,15 @@ type (
 // Uses the undocumented API service universes/v1
 func GetPlaceUniverse(placeID PlaceID) (UniverseID, error) {
 	r := struct {
-		uid UniverseID `json:"universeId"`
+		UniverseID `json:"universeId"`
 	}{}
 
 	pid := strconv.FormatInt(int64(placeID), 10)
 	err := Request("GET",
-		GetURL("apis", "v1/universes/places/"+pid+"/universe", nil), nil, &r)
+		GetURL("apis", "universes/v1/places/"+pid+"/universe", nil), nil, &r)
 	if err != nil {
 		return 0, err
 	}
 
-	return r.uid, nil
+	return r.UniverseID, nil
 }

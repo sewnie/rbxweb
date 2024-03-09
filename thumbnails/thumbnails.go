@@ -7,7 +7,6 @@ import (
 	"strconv"
 
 	"github.com/apprehensions/rbxweb"
-	"github.com/apprehensions/rbxweb/games"
 )
 
 type ReturnPolicy string
@@ -50,8 +49,8 @@ type thumbnailResponse struct {
 
 // GetGameIcons returns a Thumbnail for the given universeID, based on the named policy,
 // thumbnail size, thumbnail format, and whether the thumbnail is circular.
-func GetGameIcon(universeID games.UniverseID, policy ReturnPolicy, size string, format ThumbnailFormat, circular bool) (*Thumbnail, error) {
-	gis, err := GetGamesIcons([]games.UniverseID{universeID}, policy, size, format, circular)
+func GetGameIcon(universeID rbxweb.UniverseID, policy ReturnPolicy, size string, format ThumbnailFormat, circular bool) (*Thumbnail, error) {
+	gis, err := GetGamesIcons([]rbxweb.UniverseID{universeID}, policy, size, format, circular)
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +63,7 @@ func GetGameIcon(universeID games.UniverseID, policy ReturnPolicy, size string, 
 
 // GetGamesIcons returns a list of Thumbnails for the given list of universeIDs, based on the named policy,
 // thumbnail size, thumbnail format, and whether the thumbnail is circular.
-func GetGamesIcons(universeIDs []games.UniverseID, policy ReturnPolicy, size string, format ThumbnailFormat, circular bool) ([]Thumbnail, error) {
+func GetGamesIcons(universeIDs []rbxweb.UniverseID, policy ReturnPolicy, size string, format ThumbnailFormat, circular bool) ([]Thumbnail, error) {
 	var tr thumbnailResponse
 
 	if len(universeIDs) == 0 {
