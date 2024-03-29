@@ -39,6 +39,11 @@ type ClientVersion struct {
 	NextVersion  string `json:"nextClientVersion,omitempty"`
 }
 
+// String implements the Stringer interface.
+func (cv ClientVersion) String() string {
+	return cv.Version + " (" + cv.GUID + ")"
+}
+
 // AssignmentType represents how the user was bound to a channel.
 type AssignmentType string
 
