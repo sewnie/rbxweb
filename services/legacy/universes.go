@@ -19,7 +19,7 @@ func (l *LegacyServiceV1) GetPlaceUniverse(pid games.PlaceID) (universes.Univers
 		UniverseID universes.UniverseID `json:"universeId"`
 	}{}
 
-	path := l.Client.Path("universes/v1/places/%d/universe", nil, pid)
+	path := api.Path("universes/v1/places/%d/universe", nil, pid)
 	err := l.Client.Execute("GET", "apis", path, nil, &r)
 	if err != nil {
 		return 0, err

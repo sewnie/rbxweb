@@ -15,7 +15,7 @@ type ClientSettingsServiceV1 api.Service
 func (c *ClientSettingsServiceV1) GetClientVersion(bt BinaryType, channel string) (*ClientVersion, error) {
 	var cv ClientVersion
 
-	path := c.Client.Path("v2/client-version/%s", nil, bt)
+	path := api.Path("v2/client-version/%s", nil, bt)
 	if channel != "" {
 		path += "/channel/" + channel
 	}
@@ -40,7 +40,7 @@ func (c *ClientSettingsServiceV1) GetUserChannel(bt *BinaryType) (*UserChannel, 
 	}
 
 	err := c.Client.Execute("GET",
-		"clientsettings", c.Client.Path("/v2/user-channel", q), nil, &uc)
+		"clientsettings", api.Path("/v2/user-channel", q), nil, &uc)
 	if err != nil {
 		return nil, err
 	}

@@ -36,11 +36,6 @@ type Client struct {
 	Services
 }
 
-// Service represents a specific service provided by rbxweb.
-type Service struct {
-	Client *Client
-}
-
 // NewClient returns a new Client.
 func NewClient() *Client {
 	c := &Client{
@@ -177,13 +172,4 @@ func (c *Client) Execute(method, service, path string, body any, v any) error {
 	}
 
 	return nil
-}
-
-// GetURL constructs a URL path with the given path as the format, values (if any),
-// and format parameters for the path. The encoded query will be appended to the format.
-func (c *Client) Path(format string, query url.Values, a ...any) string {
-	if query != nil {
-		format += "?" + query.Encode()
-	}
-	return fmt.Sprintf(format, a)
 }

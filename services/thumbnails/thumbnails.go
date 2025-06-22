@@ -20,7 +20,7 @@ func (t *ThumbnailsServiceV1) ListGamesIcons(uids []universes.UniverseID, policy
 		Data []Thumbnail `json:"data"`
 	}{}
 
-	path := t.Client.Path("v1/games/icons", url.Values{
+	path := api.Path("v1/games/icons", url.Values{
 		"universeIds":  stringutils.FormatSlice(uids),
 		"returnPolicy": {string(policy)},
 		"size":         {size},
