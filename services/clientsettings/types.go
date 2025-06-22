@@ -1,11 +1,4 @@
-// clientsettings implements the Roblox ClientSettings Web API.
 package clientsettings
-
-import (
-	"net/url"
-
-	"github.com/apprehensions/rbxweb"
-)
 
 // BinaryType represents a supported Roblox platform.
 type BinaryType string
@@ -59,43 +52,4 @@ type UserChannel struct {
 	Channel    string         `json:"channelName"`
 	Assignment AssignmentType `json:"channelAssignmentType"`
 	Token      string         `json:"token"`
-}
-
-// GetClientVersion gets the client version information for the named
-// BinaryType and deployment channel, using the 'clientsettingscdn' as oppose
-// to the 'clientsetting' API provider.
-func GetClientVersion(bt BinaryType, channel string) (*ClientVersion, error) {
-	var cv ClientVersion
-
-	ep := "v2/client-version/" + string(bt)
-	if channel != "" {
-		ep += "/channel/" + channel
-	}
-
-	err := rbxweb.Request("GET", rbxweb.GetURL("clientsettings", ep, nil), nil, &cv)
-	if err != nil {
-		return nil, err
-	}
-
-	return &cv, nil
-}
-
-// GetUserChannel returns the channel name for the currently logged in
-// user. The BinaryType given is optional; the Web API defaults to an unknown
-// BinaryType.
-func GetUserChannel(bt *BinaryType) (*UserChannel, error) {
-	var uc UserChannel
-	q := url.Values{}
-
-	if bt != nil {
-		q.Add("binaryType", string(*bt))
-	}
-
-	err := rbxweb.Request("GET",
-		rbxweb.GetURL("clientsettings", "/v2/user-channel", q), nil, &uc)
-	if err != nil {
-		return nil, err
-	}
-
-	return &uc, nil
 }

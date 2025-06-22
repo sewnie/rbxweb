@@ -5,3 +5,14 @@
 [![Godoc Reference][pkg.go.dev_img]][pkg.go.dev]
 
 Go package that provides access to hand-picked Roblox web-based APIs.
+
+To see which APIs have been implemented, see the `services/` folder.
+
+No tests are performed, and stability is not guranteed; this API is susceptible to breaking changes from both Roblox and code changes.
+
+#### Example
+
+```
+client := rbxweb.NewClient()
+cv, err := client.ClientSettingsV1.GetClientVersion(clientsettings.WindowsPlayer, "")
+```

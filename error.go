@@ -1,9 +1,26 @@
 package rbxweb
 
 import (
+	"errors"
 	"fmt"
+	"net/http"
 	"strings"
 )
+
+var (
+	ErrBadStatus = errors.New("bad status")
+	ErrNoData    = errors.New("no data")
+)
+
+// StatusError represents an unexpected HTTP error, in the case
+// that a ErrorResponse was unable to be parsed.
+type StatusError struct {
+	StatusCode int
+}
+
+func (e *StatusError) Error() string {
+	return fmt.Sprintf("bad response: %s", http.StatusText(e.StatusCode))
+}
 
 // ErrorResponse implements the error response model of the API.
 type ErrorResponse struct {
@@ -13,7 +30,7 @@ type ErrorResponse struct {
 }
 
 // errorsResponse implements the errors response model of the API.
-type errorsResponse struct {
+type ErrorsResponse struct {
 	Errors []ErrorResponse `json:"errors,omitempty"`
 }
 
@@ -23,7 +40,7 @@ func (err ErrorResponse) Error() string {
 }
 
 // Error implemements the error interface.
-func (errs errorsResponse) Error() string {
+func (errs ErrorsResponse) Error() string {
 	s := make([]string, len(errs.Errors))
 	for i, e := range errs.Errors {
 		s[i] = e.Error()
@@ -33,7 +50,7 @@ func (errs errorsResponse) Error() string {
 
 // Unwrap implements the Unwrap interface by returning the first error in the
 // list.
-func (errs errorsResponse) Unwrap() error {
+func (errs ErrorsResponse) Unwrap() error {
 	if len(errs.Errors) == 0 {
 		return nil
 	}
