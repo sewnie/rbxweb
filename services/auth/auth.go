@@ -42,30 +42,22 @@ func (a *AuthServiceV1) SetCSRFToken() error {
 // If logging in with a token.Token, set the login type to Token, the value to
 // the token's code, and the password to the token's private key.
 //
+// Implementation from https://github.com/o3dq/roblox-signature
+//
 // Requires a CSRF Token to be set, see SetCSRFToken
 func (a *AuthServiceV1) CreateLogin(value, password string, login LoginType) (*Login, error) {
 	var r Login
 
-	nonce, err := a.getServerNonce()
+	i, err := a.getLoginIntent()
 	if err != nil {
-		return nil, fmt.Errorf("nonce: %w", err)
-	}
-
-	epoch := time.Now().Unix()
-	sig, err := getSaiSignature(nonce, epoch)
-	if err != nil {
-		return nil, fmt.Errorf("signature generation: %w", err)
+		return nil, err
 	}
 
 	req := loginRequest{
 		CType:    string(login),
 		CValue:   value,
 		Password: password,
-		Intent: loginIntent{
-			Epoch:        epoch,
-			ServerNonce:  nonce,
-			SaiSignature: sig,
-		},
+		Intent:   *i,
 	}
 
 	err = a.Client.Execute("POST", "auth", "v2/login", req, &r)
@@ -87,27 +79,37 @@ func (a *AuthServiceV1) getServerNonce() (string, error) {
 	return nonce, nil
 }
 
-func getSaiSignature(nonce string, epoch int64) (string, error) {
-	// Implementation from o3dq/roblox-signature
+func (a *AuthServiceV1) getLoginIntent() (*loginIntent, error) {
 	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
-		return "", fmt.Errorf("key: %w", err)
+		return nil, fmt.Errorf("key: %w", err)
 	}
 
-	pub, err := x509.MarshalPKIXPublicKey(&key.PublicKey)
+	nonce, err := a.getServerNonce()
 	if err != nil {
-		return "", fmt.Errorf("public key: %w", err)
+		return nil, fmt.Errorf("nonce: %w", err)
 	}
-	pubEnc := base64.StdEncoding.EncodeToString(pub)
 
-	data := []byte(fmt.Sprintf("%s:%d:%s",
-		pubEnc, epoch, nonce))
+	pubBytes, err := x509.MarshalPKIXPublicKey(&key.PublicKey)
+	if err != nil {
+		return nil, fmt.Errorf("public key: %w", err)
+	}
+	pub := base64.StdEncoding.EncodeToString(pubBytes)
 
-	hash := sha256.Sum256(data)
+	epoch := time.Now().Unix()
+	data := fmt.Sprintf("%s:%d:%s", pub, epoch, nonce)
+
+	hash := sha256.Sum256([]byte(data))
 	sig, err := ecdsa.SignASN1(rand.Reader, key, hash[:])
 	if err != nil {
-		return "", fmt.Errorf("sign asn1: %w", err)
+		return nil, fmt.Errorf("sign: %w", err)
 	}
+	sai := base64.StdEncoding.EncodeToString(sig)
 
-	return base64.StdEncoding.EncodeToString(sig), nil
+	return &loginIntent{
+		PublicKey:    pub,
+		Epoch:        epoch,
+		ServerNonce:  nonce,
+		SaiSignature: sai,
+	}, nil
 }
