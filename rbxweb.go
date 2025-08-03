@@ -69,11 +69,13 @@ func (c *Client) BareDo(req *http.Request) (*http.Response, error) {
 
 	for _, cookie := range resp.Cookies() {
 		if cookie.Name == cookieSecurity {
+			c.logInfo("Recieved " + cookieSecurity)
 			c.Security = cookie.Value
 		}
 	}
 	if t := resp.Header.Get(headerToken); t != "" {
 		c.Token = t
+		c.logInfo("Recieved CSRF", "token", c.Token)
 	}
 	if resp.StatusCode == http.StatusOK {
 		return resp, nil
