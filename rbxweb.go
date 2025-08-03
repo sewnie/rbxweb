@@ -9,10 +9,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/url"
 
-	"github.com/apprehensions/rbxweb/internal/api"
+	"github.com/sewnie/rbxweb/internal/api"
 )
 
 const (
@@ -27,6 +28,8 @@ const (
 type Client struct {
 	http.Client
 	BaseDomain string
+
+	Logger *slog.Logger
 
 	Security string
 	Token    string
@@ -56,6 +59,9 @@ func NewClient() *Client {
 // If Roblox set a ROBLOSECURITY cookie or a X-CSRF-TOKEN header, it will
 // always be used in future requests.
 func (c *Client) BareDo(req *http.Request) (*http.Response, error) {
+	c.logInfo("Performing Request",
+		"method", req.Method, "path", req.URL.Path)
+
 	resp, err := c.Client.Do(req)
 	if err != nil {
 		return resp, err
@@ -108,10 +114,18 @@ func (c *Client) Do(req *http.Request, v any) (*http.Response, error) {
 	case nil:
 		return resp, nil
 	case io.Writer:
+		if c.logIsDebug() {
+			b, _ := io.ReadAll(resp.Body)
+			c.logDebug("Response", "status", resp.StatusCode, "data", string(b))
+			v.Write(b)
+			return resp, nil
+		}
 		_, err = io.Copy(v, resp.Body)
 		return resp, err
 	default:
-		return resp, json.NewDecoder(resp.Body).Decode(v)
+		err = json.NewDecoder(resp.Body).Decode(v)
+		c.logDebug("Response", "status", resp.StatusCode, "data", v)
+		return resp, err
 	}
 }
 
@@ -128,6 +142,9 @@ func (c *Client) NewRequest(method, service, path string, body any) (*http.Reque
 	if service != "" {
 		url.Host = service + "." + url.Host
 	}
+
+	c.logDebug("New Request",
+		"service", service, "method", method, "body", body)
 
 	buf := new(bytes.Buffer)
 	if body != nil {
@@ -172,4 +189,32 @@ func (c *Client) Execute(method, service, path string, body any, v any) error {
 	}
 
 	return nil
+}
+
+func (c *Client) logDebug(msg string, args ...any) {
+	if c.Logger != nil {
+		c.Logger.Debug("rbxweb: "+msg, args...)
+	}
+}
+
+func (c *Client) logInfo(msg string, args ...any) {
+	if c.Logger != nil {
+		c.Logger.Info("rbxweb: "+msg, args...)
+	}
+}
+
+func (c *Client) logWarn(msg string, args ...any) {
+	if c.Logger != nil {
+		c.Logger.Warn("rbxweb: "+msg, args...)
+	}
+}
+
+func (c *Client) logError(msg string, args ...any) {
+	if c.Logger != nil {
+		c.Logger.Error("rbxweb: "+msg, args...)
+	}
+}
+
+func (c *Client) logIsDebug() bool {
+	return c.Logger != nil && c.Logger.Enabled(nil, slog.LevelDebug)
 }

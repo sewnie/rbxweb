@@ -1,15 +1,18 @@
 package main
 
 import (
-	"log"
+	"log/slog"
 	"time"
 
-	"github.com/apprehensions/rbxweb"
-	"github.com/apprehensions/rbxweb/services/auth"
+	"github.com/sewnie/rbxweb"
+	"github.com/sewnie/rbxweb/services/auth"
 )
 
 func main() {
+	slog.SetLogLoggerLevel(slog.LevelDebug)
+
 	c := rbxweb.NewClient()
+	c.Logger = slog.Default()
 
 	if err := c.AuthV1.SetCSRFToken(); err != nil {
 		log.Fatalln("init csrf token:", err)
