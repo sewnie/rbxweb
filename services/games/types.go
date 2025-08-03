@@ -1,7 +1,7 @@
 package games
 
 import (
-	"github.com/apprehensions/rbxweb/services/universes"
+	"github.com/sewnie/rbxweb/services/universes"
 )
 
 // CreatorID represents a Game creator on Roblox.

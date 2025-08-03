@@ -4,7 +4,7 @@ package clientsettings
 import (
 	"net/url"
 
-	"github.com/apprehensions/rbxweb/internal/api"
+	"github.com/sewnie/rbxweb/internal/api"
 )
 
 // GamesServiceV1 handles the 'clientsettings/v2' Roblox Web API.

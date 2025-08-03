@@ -12,7 +12,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/apprehensions/rbxweb/internal/api"
+	"github.com/sewnie/rbxweb/internal/api"
 )
 
 // GamesServiceV1 handles the 'auth/v2' Roblox Web API.

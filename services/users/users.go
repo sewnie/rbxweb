@@ -2,7 +2,7 @@
 package users
 
 import (
-	"github.com/apprehensions/rbxweb/internal/api"
+	"github.com/sewnie/rbxweb/internal/api"
 )
 
 // UsersServiceV1 partially handles the 'users/v1' Roblox Web API.

@@ -3,32 +3,32 @@
 package rbxweb
 
 import (
-	"github.com/apprehensions/rbxweb/services/auth"
-	"github.com/apprehensions/rbxweb/services/clientsettings"
-	"github.com/apprehensions/rbxweb/services/games"
-	"github.com/apprehensions/rbxweb/services/legacy"
-	"github.com/apprehensions/rbxweb/services/thumbnails"
-	"github.com/apprehensions/rbxweb/services/token"
-	"github.com/apprehensions/rbxweb/services/users"
+	"github.com/sewnie/rbxweb/services/auth"
+	"github.com/sewnie/rbxweb/services/clientsettings"
+	"github.com/sewnie/rbxweb/services/games"
+	"github.com/sewnie/rbxweb/services/legacy"
+	"github.com/sewnie/rbxweb/services/thumbnails"
+	"github.com/sewnie/rbxweb/services/token"
+	"github.com/sewnie/rbxweb/services/users"
 )
 
 // Services is the list of implemented Roblox Web APIs
 type Services struct {
-	ThumbnailsV1     *thumbnails.ThumbnailsServiceV1
-	UsersV1          *users.UsersServiceV1
 	AuthTokenV1      *token.AuthTokenServiceV1
+	UsersV1          *users.UsersServiceV1
 	AuthV1           *auth.AuthServiceV1
 	ClientSettingsV1 *clientsettings.ClientSettingsServiceV1
 	GamesV1          *games.GamesServiceV1
 	LegacyV1         *legacy.LegacyServiceV1
+	ThumbnailsV1     *thumbnails.ThumbnailsServiceV1
 }
 
 func (c *Client) setServices() {
+	c.ThumbnailsV1 = (*thumbnails.ThumbnailsServiceV1)(&c.common)
+	c.AuthTokenV1 = (*token.AuthTokenServiceV1)(&c.common)
+	c.UsersV1 = (*users.UsersServiceV1)(&c.common)
+	c.AuthV1 = (*auth.AuthServiceV1)(&c.common)
 	c.ClientSettingsV1 = (*clientsettings.ClientSettingsServiceV1)(&c.common)
 	c.GamesV1 = (*games.GamesServiceV1)(&c.common)
 	c.LegacyV1 = (*legacy.LegacyServiceV1)(&c.common)
-	c.ThumbnailsV1 = (*thumbnails.ThumbnailsServiceV1)(&c.common)
-	c.UsersV1 = (*users.UsersServiceV1)(&c.common)
-	c.AuthTokenV1 = (*token.AuthTokenServiceV1)(&c.common)
-	c.AuthV1 = (*auth.AuthServiceV1)(&c.common)
 }

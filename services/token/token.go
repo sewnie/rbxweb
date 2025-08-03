@@ -2,7 +2,7 @@
 package token
 
 import (
-	"github.com/apprehensions/rbxweb/internal/api"
+	"github.com/sewnie/rbxweb/internal/api"
 )
 
 // ThumbnailsServiceV1 partially handles the undocumented 'auth-token-service/v1' Roblox Web API.

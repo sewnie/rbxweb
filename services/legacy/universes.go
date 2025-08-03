@@ -2,9 +2,9 @@
 package legacy
 
 import (
-	"github.com/apprehensions/rbxweb/internal/api"
-	"github.com/apprehensions/rbxweb/services/games"
-	"github.com/apprehensions/rbxweb/services/universes"
+	"github.com/sewnie/rbxweb/internal/api"
+	"github.com/sewnie/rbxweb/services/games"
+	"github.com/sewnie/rbxweb/services/universes"
 )
 
 // LegacyServiceV1 handles legacy Roblox Web APIs.

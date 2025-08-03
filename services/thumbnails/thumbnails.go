@@ -5,9 +5,9 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/apprehensions/rbxweb/internal/api"
-	"github.com/apprehensions/rbxweb/internal/stringutils"
-	"github.com/apprehensions/rbxweb/services/universes"
+	"github.com/sewnie/rbxweb/internal/api"
+	"github.com/sewnie/rbxweb/internal/stringutils"
+	"github.com/sewnie/rbxweb/services/universes"
 )
 
 // ThumbnailsServiceV1 handles the 'thumbnails/v1' Roblox Web API.

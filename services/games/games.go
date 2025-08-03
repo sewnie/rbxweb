@@ -4,9 +4,9 @@ package games
 import (
 	"net/url"
 
-	"github.com/apprehensions/rbxweb/internal/api"
-	"github.com/apprehensions/rbxweb/internal/stringutils"
-	"github.com/apprehensions/rbxweb/services/universes"
+	"github.com/sewnie/rbxweb/internal/api"
+	"github.com/sewnie/rbxweb/internal/stringutils"
+	"github.com/sewnie/rbxweb/services/universes"
 )
 
 // GamesServiceV1 handles the 'games/v1' Roblox Web API.
