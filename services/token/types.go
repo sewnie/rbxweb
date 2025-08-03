@@ -11,8 +11,8 @@ type Token struct {
 
 // TokenStatus is a representation an unknown model returned by login/status.
 type TokenStatus struct {
-	Status            string  `json:"status"`
-	AccountName       *string `json:"accountName"`
-	AccountPictureURL *string `json:"accountPictureUrl"`
-	ExpirationTime    string  `json:"expirationTime"`
+	Status            string `json:"status"`
+	AccountName       string `json:"accountName"`
+	AccountPictureURL string `json:"accountPictureUrl"`
+	ExpirationTime    string `json:"expirationTime"`
 }
