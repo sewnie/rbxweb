@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/sewnie/rbxweb"
-	"github.com/sewnie/rbxweb/services/auth"
 )
 
 func main() {
@@ -15,7 +14,7 @@ func main() {
 	c := rbxweb.NewClient()
 	c.Logger = slog.Default()
 
-	if err := c.AuthV1.SetCSRFToken(); err != nil {
+	if err := c.AuthV2.SetCSRFToken(); err != nil {
 		log.Fatalln("init csrf token:", err)
 	}
 
@@ -37,7 +36,7 @@ func main() {
 		time.Sleep(2 * time.Second)
 	}
 
-	_, err = c.AuthV1.CreateLogin(t.Code, t.PrivateKey, auth.Token)
+	_, err = c.AuthV2.CreateLogin(t.Code, t.PrivateKey, rbxweb.LoginTypeToken)
 	if err != nil {
 		log.Fatalln("login:", err)
 	}

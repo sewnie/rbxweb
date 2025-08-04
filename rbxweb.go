@@ -12,8 +12,6 @@ import (
 	"log/slog"
 	"net/http"
 	"net/url"
-
-	"github.com/sewnie/rbxweb/internal/api"
 )
 
 const (
@@ -34,7 +32,7 @@ type Client struct {
 	Security string
 	Token    string
 
-	common api.Service // Reuse a single struct instead of allocating one for each service on the heap.
+	common service // Reuse a single struct instead of allocating one for each service on the heap.
 
 	Services
 }
@@ -49,6 +47,19 @@ func NewClient() *Client {
 	c.setServices()
 
 	return c
+}
+
+type service struct {
+	Client *Client
+}
+
+// Path constructs a URL path with the given path as the format, values (if any),
+// and format parameters for the path. The encoded query will be appended to the format.
+func Path(format string, query url.Values, a ...any) string {
+	if query != nil {
+		format += "?" + query.Encode()
+	}
+	return fmt.Sprintf(format, a...)
 }
 
 // BareDo will execute the given HTTP request, leaving the response body

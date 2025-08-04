@@ -1,12 +1,31 @@
-// clientsettings selectively implements the 'users' Roblox Web API.
-package users
-
-import (
-	"github.com/sewnie/rbxweb/internal/api"
-)
+package rbxweb
 
 // UsersServiceV1 partially handles the 'users/v1' Roblox Web API.
-type UsersServiceV1 api.Service
+type UsersServiceV1 service
+
+// UserID represents a user on Roblox.
+type UserID int64
+
+// AuthenticatedUser implements the AuthenticatedUserResponse API model.
+type AuthenticatedUser struct {
+	ID          UserID `json:"id"`
+	Name        string `json:"name"`
+	DisplayName string `json:"displayName"`
+}
+
+// User implements the VerifiedBadgeUserResponse API model.
+type User struct {
+	Verified    bool   `json:"hasVerifiedBadge"`
+	ID          UserID `json:"id"`
+	Name        string `json:"name"`
+	DisplayName string `json:"displayName"`
+}
+
+// UserIDRequest implements the MultiGetByUserIdRequest API model.
+type UserIDRequest struct {
+	IDs                []UserID `json:"userIds"`
+	ExcludeBannedUsers bool     `json:"excludeBannedUsers"`
+}
 
 // GetAuthenticated returns the minimal authenticated user.
 func (u *UsersServiceV1) GetAuthenticated() (*AuthenticatedUser, error) {
@@ -38,5 +57,5 @@ func (u *UsersServiceV1) ListUsers(uid UserIDRequest) ([]User, error) {
 //
 // If none are found, nil will be returned.
 func (u *UsersServiceV1) GetUser(uid UserIDRequest) (*User, error) {
-	return api.GetList(u.ListUsers(uid))
+	return getList(u.ListUsers(uid))
 }
