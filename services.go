@@ -3,21 +3,19 @@ package rbxweb
 
 // Services is the list of implemented Roblox Web APIs
 type Services struct {
-	AuthV2           *AuthServiceV2
-	UsersV1          *UsersServiceV1
 	GamesV1          *GamesServiceV1
-	LegacyV1         *LegacyServiceV1
-	ClientSettingsV2 *ClientSettingsServiceV2
 	ThumbnailsV1     *ThumbnailsServiceV1
+	UsersV1          *UsersServiceV1
+	AuthV2           *AuthServiceV2
+	ClientSettingsV2 *ClientSettingsServiceV2
 	AuthTokenV1      *AuthTokenServiceV1
 }
 
 func (c *Client) setServices() {
-	c.AuthV2 = (*AuthServiceV2)(&c.common)
-	c.UsersV1 = (*UsersServiceV1)(&c.common)
 	c.GamesV1 = (*GamesServiceV1)(&c.common)
-	c.LegacyV1 = (*LegacyServiceV1)(&c.common)
-	c.ClientSettingsV2 = (*ClientSettingsServiceV2)(&c.common)
 	c.ThumbnailsV1 = (*ThumbnailsServiceV1)(&c.common)
+	c.UsersV1 = (*UsersServiceV1)(&c.common)
+	c.AuthV2 = (*AuthServiceV2)(&c.common)
+	c.ClientSettingsV2 = (*ClientSettingsServiceV2)(&c.common)
 	c.AuthTokenV1 = (*AuthTokenServiceV1)(&c.common)
 }
