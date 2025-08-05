@@ -50,9 +50,9 @@ type loginIntent struct {
 }
 
 type loginRequest struct {
-	CType    string      `json:"ctype"`
-	CValue   string      `json:"cvalue"`
-	Password string      `json:"password"`
+	CType    string       `json:"ctype"`
+	CValue   string       `json:"cvalue"`
+	Password string       `json:"password"`
 	Intent   *loginIntent `json:"secureAuthenticationIntent,omitempty"`
 }
 

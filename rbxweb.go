@@ -1,6 +1,4 @@
 // Package rbxweb provides API routines to interact with Roblox's web API.
-//
-//go:generate go run ./cmd/genservices
 package rbxweb
 
 import (
@@ -34,7 +32,13 @@ type Client struct {
 	csrfToken string
 
 	common service // Reuse a single struct instead of allocating one for each service on the heap.
-	Services
+
+	GamesV1          *GamesServiceV1
+	ThumbnailsV1     *ThumbnailsServiceV1
+	UsersV1          *UsersServiceV1
+	AuthV2           *AuthServiceV2
+	ClientSettingsV2 *ClientSettingsServiceV2
+	AuthTokenV1      *AuthTokenServiceV1
 }
 
 // NewClient returns a new Client.
@@ -49,7 +53,12 @@ func NewClient() *Client {
 	}
 
 	c.common.Client = c
-	c.setServices()
+	c.GamesV1 = (*GamesServiceV1)(&c.common)
+	c.ThumbnailsV1 = (*ThumbnailsServiceV1)(&c.common)
+	c.UsersV1 = (*UsersServiceV1)(&c.common)
+	c.AuthV2 = (*AuthServiceV2)(&c.common)
+	c.ClientSettingsV2 = (*ClientSettingsServiceV2)(&c.common)
+	c.AuthTokenV1 = (*AuthTokenServiceV1)(&c.common)
 
 	return c
 }
