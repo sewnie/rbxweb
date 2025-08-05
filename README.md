@@ -6,7 +6,8 @@
 
 Go package that provides access to hand-picked Roblox web-based APIs.
 
-To see which APIs have been implemented, see the `services/` folder.
+The currently implemented APIs are considered legacy and are based on cookies;
+they are suffixed with their version numbers to standout from rbxweb source code.
 
 No tests are performed, and stability is not guranteed; this API is susceptible to breaking changes from both Roblox and code changes.
 
@@ -14,5 +15,5 @@ No tests are performed, and stability is not guranteed; this API is susceptible 
 
 ```
 client := rbxweb.NewClient()
-cv, err := client.ClientSettingsV1.GetClientVersion(clientsettings.WindowsPlayer, "")
+cv, err := client.ClientSettingsV2.GetClientVersion(rbxweb.BinaryTypeWindowsPlayer, "")
 ```
