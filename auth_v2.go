@@ -86,7 +86,7 @@ func (a *AuthServiceV2) CreateLogin(value, password string, login LoginType) (*L
 		// This can definitely be revoked by Roblox if they care to do so.
 		// Once that happens, it will mean rbxweb will have to initialize a tracker
 		// when required for a request.
-		Value: "RBXEventTrackerV2=CreateDate=08/01/2025 12:38:07&rbxid=&browserid=1748902424900004",
+		Value: "CreateDate=08/05/2025 14:55:40&rbxid=&browserid=1754423740417001",
 	}
 
 	lreq := loginRequest{

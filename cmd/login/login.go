@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os"
 	"log"
 	"log/slog"
 	"time"
@@ -14,10 +15,10 @@ func main() {
 	c := rbxweb.NewClient()
 	c.Logger = slog.Default()
 
-	log.Fatal(token(c))
-}
+	if len(os.Args) == 3 {
+		log.Fatal(c.AuthV2.CreateLogin(os.Args[1], os.Args[2], rbxweb.LoginTypeUsername))
+	}
 
-func token(c *rbxweb.Client) (*rbxweb.Login, error) {
 	t, err := c.AuthTokenV1.CreateToken()
 	if err != nil {
 		log.Fatalln("token create:", err)
@@ -33,8 +34,8 @@ func token(c *rbxweb.Client) (*rbxweb.Login, error) {
 			break
 		}
 
-		time.Sleep(2 * time.Second)
+		time.Sleep(4 * time.Second)
 	}
 
-	return c.AuthV2.CreateLogin(t.Code, t.PrivateKey, rbxweb.LoginTypeToken)
+	log.Fatal(c.AuthV2.CreateLogin(t.Code, t.PrivateKey, rbxweb.LoginTypeToken))
 }

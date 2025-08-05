@@ -176,9 +176,12 @@ func (c *Client) NewRequest(method, service, path string, body any) (*http.Reque
 
 	buf := new(bytes.Buffer)
 	if body != nil {
-		if err := json.NewEncoder(buf).Encode(body); err != nil {
+		enc := json.NewEncoder(buf)
+		enc.SetEscapeHTML(false)
+		if err := enc.Encode(body); err != nil {
 			return nil, err
 		}
+		buf.Truncate(buf.Len() - 1)
 	}
 
 	c.logDebug("New Request",
