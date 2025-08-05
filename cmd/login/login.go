@@ -14,10 +14,10 @@ func main() {
 	c := rbxweb.NewClient()
 	c.Logger = slog.Default()
 
-	if err := c.AuthV2.SetCSRFToken(); err != nil {
-		log.Fatalln("init csrf token:", err)
-	}
+	log.Fatal(token(c))
+}
 
+func token(c *rbxweb.Client) (*rbxweb.Login, error) {
 	t, err := c.AuthTokenV1.CreateToken()
 	if err != nil {
 		log.Fatalln("token create:", err)
@@ -36,8 +36,5 @@ func main() {
 		time.Sleep(2 * time.Second)
 	}
 
-	_, err = c.AuthV2.CreateLogin(t.Code, t.PrivateKey, rbxweb.LoginTypeToken)
-	if err != nil {
-		log.Fatalln("login:", err)
-	}
+	return c.AuthV2.CreateLogin(t.Code, t.PrivateKey, rbxweb.LoginTypeToken)
 }

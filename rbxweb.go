@@ -5,6 +5,7 @@ package rbxweb
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -15,8 +16,8 @@ import (
 )
 
 const (
-	cookieSecurity = ".ROBLOSECURITY"
-	headerToken    = "x-csrf-token"
+	cookieSecurity  = ".ROBLOSECURITY"
+	headerCSRFToken = "x-csrf-token"
 )
 
 // Client embeds an [http.Client], used to make Roblox API requests.
@@ -29,11 +30,10 @@ type Client struct {
 
 	Logger *slog.Logger
 
-	Security string
-	Token    string
+	Security  *http.Cookie
+	csrfToken string
 
 	common service // Reuse a single struct instead of allocating one for each service on the heap.
-
 	Services
 }
 
@@ -41,6 +41,11 @@ type Client struct {
 func NewClient() *Client {
 	c := &Client{
 		BaseDomain: "roblox.com",
+
+		Client: http.Client{Transport: &http.Transport{
+			// Fixes authentication endpoints
+			TLSClientConfig: &tls.Config{},
+		}},
 	}
 
 	c.common.Client = c
@@ -67,8 +72,9 @@ func Path(format string, query url.Values, a ...any) string {
 // If a API error response is available, it will be returned as ErrorsResponse
 // or string for undocumented APIs, otherwise, a StatusError will be returned.
 //
-// If Roblox set a ROBLOSECURITY cookie or a X-CSRF-TOKEN header, it will
-// always be used in future requests.
+// If the response returned a security cookie or a X-CSRF-TOKEN header, it will
+// be used in future requests. If a request that failed returns this header, the
+// request will not be re-attempted.
 func (c *Client) BareDo(req *http.Request) (*http.Response, error) {
 	c.logInfo("Performing Request",
 		"method", req.Method, "path", req.URL.Path)
@@ -80,14 +86,16 @@ func (c *Client) BareDo(req *http.Request) (*http.Response, error) {
 
 	for _, cookie := range resp.Cookies() {
 		if cookie.Name == cookieSecurity {
-			c.logInfo("Recieved " + cookieSecurity)
-			c.Security = cookie.Value
+			c.logDebug("Recieved " + cookieSecurity)
+			c.Security = cookie
 		}
 	}
-	if t := resp.Header.Get(headerToken); t != "" {
-		c.Token = t
-		c.logInfo("Recieved CSRF", "token", c.Token)
+
+	if t := resp.Header.Get(headerCSRFToken); t != "" {
+		c.csrfToken = t
+		c.logDebug("Recieved CSRF", "token", c.csrfToken)
 	}
+
 	if resp.StatusCode == http.StatusOK {
 		return resp, nil
 	}
@@ -145,7 +153,8 @@ func (c *Client) Do(req *http.Request, v any) (*http.Response, error) {
 // NewRequest returns a new http.Request, with a path that will be relative
 // to the BaseDomain of the client, and a service - which can be empty, to indicate
 // the microservice to use. If body is specified, it will be interepreted as JSON
-// encoded and will be added to the request body.
+// encoded and will be added to the request body. The security cookie will be added
+// to the request if available.
 func (c *Client) NewRequest(method, service, path string, body any) (*http.Request, error) {
 	url := url.URL{
 		Scheme: "https",
@@ -156,9 +165,6 @@ func (c *Client) NewRequest(method, service, path string, body any) (*http.Reque
 		url.Host = service + "." + url.Host
 	}
 
-	c.logDebug("New Request",
-		"service", service, "method", method, "body", body)
-
 	buf := new(bytes.Buffer)
 	if body != nil {
 		if err := json.NewEncoder(buf).Encode(body); err != nil {
@@ -166,25 +172,33 @@ func (c *Client) NewRequest(method, service, path string, body any) (*http.Reque
 		}
 	}
 
+	c.logDebug("New Request",
+		"service", service, "method", method, "body", buf.String())
+
 	req, err := http.NewRequest(method, url.String(), buf)
 	if err != nil {
 		return nil, err
 	}
 
-	if c.Security != "" {
-		req.AddCookie(&http.Cookie{
-			Name:  cookieSecurity,
-			Value: c.Security,
-		})
-	}
-	if c.Token != "" {
-		req.Header.Set(headerToken, c.Token)
-	}
+	req.Header.Set("User-Agent", "rbxweb/v0.0.0")
 
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}
 	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Accept-Encoding", "identity")
+
+	// > ... Similarly, RoundTrip should not attempt to
+	// > handle higher-level protocol details such as redirects,
+	// > authentication, or cookies.
+
+	if c.csrfToken != "" {
+		req.Header.Set(headerCSRFToken, c.csrfToken)
+	}
+
+	if c.Security != nil {
+		req.AddCookie(c.Security)
+	}
 
 	return req, nil
 }
@@ -202,6 +216,17 @@ func (c *Client) Execute(method, service, path string, body any, v any) error {
 	}
 
 	return nil
+}
+
+// rbxweb does not automatically retry a request if it requires a XSRF token, instead
+// endpoints that require this must use it beforehand for easier API usage.
+// in the future, automatically using the recieved XSRF token upon a "XSRF token invalid"
+// may be used if necessary.
+func (c *Client) csrfRequired() error {
+	if c.csrfToken != "" {
+		return nil
+	}
+	return c.AuthV2.setCSRFToken()
 }
 
 func (c *Client) logDebug(msg string, args ...any) {

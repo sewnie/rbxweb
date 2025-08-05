@@ -1,15 +1,16 @@
 package rbxweb
 
 import (
-	"crypto/ecdsa"
-	"crypto/elliptic"
-	"crypto/rand"
-	"crypto/sha256"
-	"crypto/x509"
-	"encoding/base64"
-	"fmt"
+	// "crypto/ecdsa"
+	// "crypto/elliptic"
+	// "crypto/rand"
+	// "crypto/sha256"
+	// "crypto/x509"
+	// "encoding/base64"
+	// "errors"
+	// "fmt"
 	"net/http"
-	"time"
+	// "time"
 )
 
 // AuthServiceV2 partially handles the 'auth/v2' Roblox Web API.
@@ -52,13 +53,10 @@ type loginRequest struct {
 	CType    string      `json:"ctype"`
 	CValue   string      `json:"cvalue"`
 	Password string      `json:"password"`
-	Intent   loginIntent `json:"secureAuthenticationIntent"`
+	Intent   *loginIntent `json:"secureAuthenticationIntent,omitempty"`
 }
 
-// SetCSRFToken calls v2/login, in hopes of returning a x-csrf-token, handled and set by client.
-//
-// If the request returned is not 403 Forbidden, an error will be returned.
-func (a *AuthServiceV2) SetCSRFToken() error {
+func (a *AuthServiceV2) setCSRFToken() error {
 	req, err := a.Client.NewRequest("POST", "auth", "v2/login", nil)
 	if err != nil {
 		return err
@@ -78,75 +76,80 @@ func (a *AuthServiceV2) SetCSRFToken() error {
 // username and password.
 // If logging in with a Token, set the login type to LoginTypeToken, the value to
 // the token's code, and the password to the token's private key.
-//
-// Implementation from https://github.com/o3dq/roblox-signature
-//
-// Requires a CSRF Token to be set, see SetCSRFToken
 func (a *AuthServiceV2) CreateLogin(value, password string, login LoginType) (*Login, error) {
-	var r Login
-
-	i, err := a.getLoginIntent()
-	if err != nil {
+	if err := a.Client.csrfRequired(); err != nil {
 		return nil, err
 	}
 
-	req := loginRequest{
+	tracker := &http.Cookie{
+		Name: "RBXEventTrackerV2",
+		// This can definitely be revoked by Roblox if they care to do so.
+		// Once that happens, it will mean rbxweb will have to initialize a tracker
+		// when required for a request.
+		Value: "RBXEventTrackerV2=CreateDate=08/01/2025 12:38:07&rbxid=&browserid=1748902424900004",
+	}
+
+	lreq := loginRequest{
 		CType:    string(login),
 		CValue:   value,
 		Password: password,
-		Intent:   *i,
+		// Intent:   *i,
 	}
 
-	err = a.Client.Execute("POST", "auth", "v2/login", req, &r)
+	req, err := a.Client.NewRequest("POST", "auth", "v2/login", lreq)
 	if err != nil {
 		return nil, err
 	}
+	req.AddCookie(tracker)
 
-	return &r, nil
+	l := new(Login)
+	if _, err := a.Client.Do(req, &l); err != nil {
+		return nil, err
+	}
+
+	return l, nil
 }
 
-func (a *AuthServiceV2) getServerNonce() (string, error) {
-	var nonce string
+// Intent generation from https://github.com/o3dq/roblox-signature, not necessary after
+// some reverse engineering.
 
-	err := a.Client.Execute("GET", "apis", "hba-service/v1/getServerNonce", nil, &nonce)
-	if err != nil {
-		return "", err
-	}
+// func (a *AuthServiceV2) getServerNonce() (string, error) {
+// 	var nonce string
 
-	return nonce, nil
-}
+// 	err := a.Client.Execute("GET", "apis", "hba-service/v1/getServerNonce", nil, &nonce)
+// 	if err != nil {
+// 		return "", err
+// 	}
 
-func (a *AuthServiceV2) getLoginIntent() (*loginIntent, error) {
-	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-	if err != nil {
-		return nil, fmt.Errorf("key: %w", err)
-	}
+// 	return nonce, nil
+// }
 
-	nonce, err := a.getServerNonce()
-	if err != nil {
-		return nil, fmt.Errorf("nonce: %w", err)
-	}
+// func getLoginIntent(nonce string) (*loginIntent, error) {
+// 	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+// 	if err != nil {
+// 		return nil, fmt.Errorf("key: %w", err)
+// 	}
 
-	pubBytes, err := x509.MarshalPKIXPublicKey(&key.PublicKey)
-	if err != nil {
-		return nil, fmt.Errorf("public key: %w", err)
-	}
-	pub := base64.StdEncoding.EncodeToString(pubBytes)
+// 	pubBytes, err := x509.MarshalPKIXPublicKey(&key.PublicKey)
+// 	if err != nil {
+// 		return nil, fmt.Errorf("public key: %w", err)
+// 	}
+// 	pub := base64.StdEncoding.EncodeToString(pubBytes)
 
-	epoch := time.Now().Unix()
-	data := fmt.Sprintf("%s:%d:%s", pub, epoch, nonce)
+// 	epoch := time.Now().Unix()
+// 	data := fmt.Sprintf("%s|%d|%s", pub, epoch, nonce)
 
-	hash := sha256.Sum256([]byte(data))
-	sig, err := ecdsa.SignASN1(rand.Reader, key, hash[:])
-	if err != nil {
-		return nil, fmt.Errorf("sign: %w", err)
-	}
-	sai := base64.StdEncoding.EncodeToString(sig)
+// 	hash := sha256.Sum256([]byte(data))
+// 	sig, err := ecdsa.SignASN1(rand.Reader, key, hash[:])
+// 	if err != nil {
+// 		return nil, fmt.Errorf("sign: %w", err)
+// 	}
+// 	sai := base64.StdEncoding.EncodeToString(sig)
 
-	return &loginIntent{
-		PublicKey:    pub,
-		Epoch:        epoch,
-		ServerNonce:  nonce,
-		SaiSignature: sai,
-	}, nil
-}
+// 	return &loginIntent{
+// 		PublicKey:    pub,
+// 		Epoch:        epoch,
+// 		ServerNonce:  nonce,
+// 		SaiSignature: sai,
+// 	}, nil
+// }
