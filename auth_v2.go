@@ -1,16 +1,7 @@
 package rbxweb
 
 import (
-	// "crypto/ecdsa"
-	// "crypto/elliptic"
-	// "crypto/rand"
-	// "crypto/sha256"
-	// "crypto/x509"
-	// "encoding/base64"
-	// "errors"
-	// "fmt"
 	"net/http"
-	// "time"
 )
 
 // AuthServiceV2 partially handles the 'auth/v2' Roblox Web API.
@@ -42,18 +33,10 @@ type Login struct {
 	RecoveryEmail                   string `json:"recoveryEmail"`
 }
 
-type loginIntent struct {
-	PublicKey    string `json:"clientPublicKey"`
-	Epoch        int64  `json:"clientEpochTimestamp"`
-	ServerNonce  string `json:"serverNonce"`
-	SaiSignature string `json:"saiSignature"`
-}
-
 type loginRequest struct {
-	CType    string       `json:"ctype"`
-	CValue   string       `json:"cvalue"`
-	Password string       `json:"password"`
-	Intent   *loginIntent `json:"secureAuthenticationIntent,omitempty"`
+	CType    string `json:"ctype"`
+	CValue   string `json:"cvalue"`
+	Password string `json:"password"`
 }
 
 func (a *AuthServiceV2) setCSRFToken() error {
@@ -81,26 +64,24 @@ func (a *AuthServiceV2) CreateLogin(value, password string, login LoginType) (*L
 		return nil, err
 	}
 
-	tracker := &http.Cookie{
-		Name: "RBXEventTrackerV2",
-		// This can definitely be revoked by Roblox if they care to do so.
-		// Once that happens, it will mean rbxweb will have to initialize a tracker
-		// when required for a request.
-		Value: "CreateDate=08/05/2025 14:55:40&rbxid=&browserid=1754423740417001",
-	}
-
 	lreq := loginRequest{
 		CType:    string(login),
 		CValue:   value,
 		Password: password,
-		// Intent:   *i,
 	}
 
 	req, err := a.Client.NewRequest("POST", "auth", "v2/login", lreq)
 	if err != nil {
 		return nil, err
 	}
-	req.AddCookie(tracker)
+
+	// This can definitely be revoked by Roblox if they care to do so.
+	// Once that happens, it will mean rbxweb will have to initialize a tracker
+	// when required for a request.
+	//
+	// req.AddCookie is not used in this endpoint since net/http sanitizes and
+	// changes the final cookie value.
+	req.Header.Set("Cookie", "RBXEventTrackerV2=CreateDate=08/01/2025 12:38:07&rbxid=227740497&browserid=1748902424900004")
 
 	l := new(Login)
 	if _, err := a.Client.Do(req, &l); err != nil {
@@ -109,47 +90,3 @@ func (a *AuthServiceV2) CreateLogin(value, password string, login LoginType) (*L
 
 	return l, nil
 }
-
-// Intent generation from https://github.com/o3dq/roblox-signature, not necessary after
-// some reverse engineering.
-
-// func (a *AuthServiceV2) getServerNonce() (string, error) {
-// 	var nonce string
-
-// 	err := a.Client.Execute("GET", "apis", "hba-service/v1/getServerNonce", nil, &nonce)
-// 	if err != nil {
-// 		return "", err
-// 	}
-
-// 	return nonce, nil
-// }
-
-// func getLoginIntent(nonce string) (*loginIntent, error) {
-// 	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-// 	if err != nil {
-// 		return nil, fmt.Errorf("key: %w", err)
-// 	}
-
-// 	pubBytes, err := x509.MarshalPKIXPublicKey(&key.PublicKey)
-// 	if err != nil {
-// 		return nil, fmt.Errorf("public key: %w", err)
-// 	}
-// 	pub := base64.StdEncoding.EncodeToString(pubBytes)
-
-// 	epoch := time.Now().Unix()
-// 	data := fmt.Sprintf("%s|%d|%s", pub, epoch, nonce)
-
-// 	hash := sha256.Sum256([]byte(data))
-// 	sig, err := ecdsa.SignASN1(rand.Reader, key, hash[:])
-// 	if err != nil {
-// 		return nil, fmt.Errorf("sign: %w", err)
-// 	}
-// 	sai := base64.StdEncoding.EncodeToString(sig)
-
-// 	return &loginIntent{
-// 		PublicKey:    pub,
-// 		Epoch:        epoch,
-// 		ServerNonce:  nonce,
-// 		SaiSignature: sai,
-// 	}, nil
-// }

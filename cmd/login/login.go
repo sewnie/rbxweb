@@ -1,9 +1,9 @@
 package main
 
 import (
-	"os"
 	"log"
 	"log/slog"
+	"os"
 	"time"
 
 	"github.com/sewnie/rbxweb"
