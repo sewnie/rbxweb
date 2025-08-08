@@ -66,7 +66,7 @@ type UserChannel struct {
 func (c *ClientSettingsServiceV2) GetClientVersion(bt BinaryType, channel string) (*ClientVersion, error) {
 	var cv ClientVersion
 
-	path := Path("v2/client-version/%s", nil, bt)
+	path := path("v2/client-version/%s", nil, bt)
 	if channel != "" {
 		path += "/channel/" + channel
 	}
@@ -91,7 +91,7 @@ func (c *ClientSettingsServiceV2) GetUserChannel(bt *BinaryType) (*UserChannel, 
 	}
 
 	err := c.Client.Execute("GET",
-		"clientsettings", Path("/v2/user-channel", q), nil, &uc)
+		"clientsettings", path("/v2/user-channel", q), nil, &uc)
 	if err != nil {
 		return nil, err
 	}

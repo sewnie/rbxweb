@@ -88,7 +88,7 @@ func (g *GamesServiceV1) ListGamesDetails(uids []UniverseID) ([]GameDetail, erro
 	}{}
 
 	query := url.Values{"universeIds": formatSlice(uids)}
-	err := g.Client.Execute("GET", "games", Path("v1/games", query), nil, &gdr)
+	err := g.Client.Execute("GET", "games", path("v1/games", query), nil, &gdr)
 	if err != nil {
 		return nil, err
 	}
@@ -108,7 +108,7 @@ func (g *GamesServiceV1) ListPlacesDetails(pids []PlaceID) ([]PlaceDetail, error
 	var pds []PlaceDetail
 
 	query := url.Values{"placeIds": formatSlice(pids)}
-	err := g.Client.Execute("GET", "games", Path("v1/games/multiget-place-details", query), nil, &pds)
+	err := g.Client.Execute("GET", "games", path("v1/games/multiget-place-details", query), nil, &pds)
 	if err != nil {
 		return nil, err
 	}

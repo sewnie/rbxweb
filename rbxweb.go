@@ -69,9 +69,9 @@ type service struct {
 	Client *Client
 }
 
-// Path constructs a URL path with the given path as the format, values (if any),
+// path constructs a URL path with the given path as the format, values (if any),
 // and format parameters for the path. The encoded query will be appended to the format.
-func Path(format string, query url.Values, a ...any) string {
+func path(format string, query url.Values, a ...any) string {
 	if query != nil {
 		format += "?" + query.Encode()
 	}
