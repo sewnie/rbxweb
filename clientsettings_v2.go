@@ -84,8 +84,8 @@ func (c *ClientSettingsServiceV2) GetClientVersion(bt BinaryType, channel string
 // BinaryType.
 func (c *ClientSettingsServiceV2) GetUserChannel(bt *BinaryType) (*UserChannel, error) {
 	var uc UserChannel
+	
 	q := url.Values{}
-
 	if bt != nil {
 		q.Add("binaryType", string(*bt))
 	}

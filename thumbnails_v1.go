@@ -21,7 +21,7 @@ const (
 type ThumbnailFormat string
 
 const (
-	ThumbnailFormatPng  ThumbnailFormat = "Png"
+	ThumbnailFormatPng  ThumbnailFormat = "Png" // Default
 	ThumbnailFormatJpeg ThumbnailFormat = "Jpeg"
 )
 
@@ -45,22 +45,30 @@ type Thumbnail struct {
 	Version  string         `json:"version"`
 }
 
+// GameIconOptions provides parameters for retrieving game icons.
+type GameIconOptions struct {
+	Policy      ReturnPolicy
+	Size        string // one of 50x50, 128x128, 150x150, 256x256, 420x420, 512x512
+	Format      ThumbnailFormat
+	Rectangular bool
+}
+
 // ListGamesIcons returns a list of Thumbnails for the given list of universeIDs, based on the named policy,
 // thumbnail size, thumbnail format, and whether the thumbnail is circular.
-func (t *ThumbnailsServiceV1) ListGamesIcons(uids []UniverseID, policy ReturnPolicy, size string, format ThumbnailFormat, circular bool) ([]Thumbnail, error) {
+func (t *ThumbnailsServiceV1) ListGamesIcons(uids []UniverseID, opts *GameIconOptions) ([]Thumbnail, error) {
 	r := struct {
 		Data []Thumbnail `json:"data"`
 	}{}
 
-	path := path("v1/games/icons", url.Values{
-		"universeIds":  formatSlice(uids),
-		"returnPolicy": {string(policy)},
-		"size":         {size},
-		"format":       {string(format)},
-		"isCircular":   {strconv.FormatBool(circular)},
-	})
+	q := url.Values{"universeIds": formatSlice(uids)}
+	if opts != nil {
+		q.Add("returnPolicy", string(opts.Policy))
+		q.Add("size", opts.Size)
+		q.Add("format", string(opts.Format))
+		q.Add("isCircular", strconv.FormatBool(!opts.Rectangular))
+	}
 
-	err := t.Client.Execute("GET", "thumbnails", path, nil, &r)
+	err := t.Client.Execute("GET", "thumbnails", path("v1/games/icons", q), nil, &r)
 	if err != nil {
 		return nil, err
 	}
@@ -72,6 +80,6 @@ func (t *ThumbnailsServiceV1) ListGamesIcons(uids []UniverseID, policy ReturnPol
 // thumbnail size, thumbnail format, and whether the thumbnail is circular.
 //
 // If none are found, nil will be returned.
-func (t *ThumbnailsServiceV1) GetGameIcon(universeID UniverseID, policy ReturnPolicy, size string, format ThumbnailFormat, circular bool) (*Thumbnail, error) {
-	return getList(t.ListGamesIcons([]UniverseID{universeID}, policy, size, format, circular))
+func (t *ThumbnailsServiceV1) GetGameIcon(universeID UniverseID, opts *GameIconOptions) (*Thumbnail, error) {
+	return getList(t.ListGamesIcons([]UniverseID{universeID}, opts))
 }
