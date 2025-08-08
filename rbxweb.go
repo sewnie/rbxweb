@@ -282,7 +282,23 @@ func (c *Client) csrfRequired() error {
 	if c.csrfToken != "" {
 		return nil
 	}
-	return c.AuthV2.setCSRFToken()
+
+	// one of many ways to get a CSRF easily
+	req, err := c.NewRequest("POST", "auth", "v2/login", nil)
+	if err != nil {
+		return err
+	}
+
+	resp, err := c.BareDo(req)
+	if resp.StatusCode == http.StatusForbidden {
+		return nil
+	}
+
+	if c.csrfToken == "" {
+		return errors.New("csrf missing in client")
+	}
+
+	return err
 }
 
 // TODO: replace with user-logged http.Transport

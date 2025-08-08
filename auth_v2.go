@@ -1,9 +1,5 @@
 package rbxweb
 
-import (
-	"net/http"
-)
-
 // AuthServiceV2 partially handles the 'auth/v2' Roblox Web API.
 type AuthServiceV2 service
 
@@ -37,20 +33,6 @@ type loginRequest struct {
 	CType    string `json:"ctype"`
 	CValue   string `json:"cvalue"`
 	Password string `json:"password"`
-}
-
-func (a *AuthServiceV2) setCSRFToken() error {
-	req, err := a.Client.NewRequest("POST", "auth", "v2/login", nil)
-	if err != nil {
-		return err
-	}
-
-	resp, err := a.Client.BareDo(req)
-	if resp.StatusCode == http.StatusForbidden {
-		return nil
-	}
-
-	return err
 }
 
 // CreateLogin logins as the user with the given Token.
