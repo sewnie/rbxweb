@@ -29,12 +29,6 @@ type Login struct {
 	RecoveryEmail                   string `json:"recoveryEmail"`
 }
 
-type loginRequest struct {
-	CType    string `json:"ctype"`
-	CValue   string `json:"cvalue"`
-	Password string `json:"password"`
-}
-
 // CreateLogin logins as the user with the given Token.
 //
 // If logging in with a username and password, set value and password to a
@@ -46,7 +40,11 @@ func (a *AuthServiceV2) CreateLogin(value, password string, login LoginType) (*L
 		return nil, err
 	}
 
-	lreq := loginRequest{
+	lreq := struct {
+		CType    string `json:"ctype"`
+		CValue   string `json:"cvalue"`
+		Password string `json:"password"`
+	}{
 		CType:    string(login),
 		CValue:   value,
 		Password: password,
