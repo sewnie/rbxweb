@@ -135,7 +135,7 @@ func (c *Client) NewRequest(method, service, path string, body any) (*http.Reque
 
 // Do performs the API request and returns the HTTP response. If any error occurs,
 // the respose body will be closed If a API error response is available, it will be
-// returned as either an ErrorsResponse or string error for undocumented APIs; if all
+// returned as either an Errors or string error for undocumented APIs; if all
 // else fails, a StatusError will be returned. Otherwise, the user is responsible for
 // handling and closing the response body.
 //
@@ -176,7 +176,7 @@ func (c *Client) BareDo(req *http.Request) (*http.Response, error) {
 		return resp, &StatusError{StatusCode: resp.StatusCode}
 	}
 
-	errResp := new(ErrorsResponse)
+	errResp := new(Errors)
 	if err := json.Unmarshal(data, errResp); err == nil {
 		return resp, fmt.Errorf("api errors: %w", errResp)
 	}
