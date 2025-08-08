@@ -77,6 +77,62 @@ func Path(format string, query url.Values, a ...any) string {
 	return fmt.Sprintf(format, a...)
 }
 
+// NewRequest returns a new http.Request, with a path that will be relative
+// to the BaseDomain of the client, and a service - which can be empty, to indicate
+// the microservice to use. If body is specified, it will be interepreted as JSON
+// encoded and will be added to the request body. The security cookie will be added
+// to the request if available.
+func (c *Client) NewRequest(method, service, path string, body any) (*http.Request, error) {
+	url := url.URL{
+		Scheme: "https",
+		Host:   c.BaseDomain,
+		Path:   path,
+	}
+	if service != "" {
+		url.Host = service + "." + url.Host
+	}
+
+	buf := new(bytes.Buffer)
+	if body != nil {
+		enc := json.NewEncoder(buf)
+		enc.SetEscapeHTML(false)
+		if err := enc.Encode(body); err != nil {
+			return nil, err
+		}
+		buf.Truncate(buf.Len() - 1)
+	}
+
+	c.logDebug("New Request",
+		"service", service, "method", method, "body", buf.String())
+
+	req, err := http.NewRequest(method, url.String(), buf)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("User-Agent", "rbxweb/v0.0.0")
+
+	if body != nil {
+		req.Header.Set("Content-Type", "application/json")
+	}
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Accept-Encoding", "identity")
+
+	// > ... Similarly, RoundTrip should not attempt to
+	// > handle higher-level protocol details such as redirects,
+	// > authentication, or cookies.
+
+	if c.csrfToken != "" {
+		req.Header.Set(headerCSRFToken, c.csrfToken)
+	}
+
+	if c.Security != nil {
+		req.AddCookie(c.Security)
+	}
+
+	return req, nil
+}
+
 // BareDo will execute the given HTTP request, leaving the response body
 // to be read by the user. If any error occurs, the respose body will be closed;
 // If a API error response is available, it will be returned as either an ErrorsResponse
@@ -164,61 +220,7 @@ func (c *Client) Do(req *http.Request, v any) (*http.Response, error) {
 	}
 }
 
-// NewRequest returns a new http.Request, with a path that will be relative
-// to the BaseDomain of the client, and a service - which can be empty, to indicate
-// the microservice to use. If body is specified, it will be interepreted as JSON
-// encoded and will be added to the request body. The security cookie will be added
-// to the request if available.
-func (c *Client) NewRequest(method, service, path string, body any) (*http.Request, error) {
-	url := url.URL{
-		Scheme: "https",
-		Host:   c.BaseDomain,
-		Path:   path,
-	}
-	if service != "" {
-		url.Host = service + "." + url.Host
-	}
 
-	buf := new(bytes.Buffer)
-	if body != nil {
-		enc := json.NewEncoder(buf)
-		enc.SetEscapeHTML(false)
-		if err := enc.Encode(body); err != nil {
-			return nil, err
-		}
-		buf.Truncate(buf.Len() - 1)
-	}
-
-	c.logDebug("New Request",
-		"service", service, "method", method, "body", buf.String())
-
-	req, err := http.NewRequest(method, url.String(), buf)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Set("User-Agent", "rbxweb/v0.0.0")
-
-	if body != nil {
-		req.Header.Set("Content-Type", "application/json")
-	}
-	req.Header.Set("Accept", "application/json")
-	req.Header.Set("Accept-Encoding", "identity")
-
-	// > ... Similarly, RoundTrip should not attempt to
-	// > handle higher-level protocol details such as redirects,
-	// > authentication, or cookies.
-
-	if c.csrfToken != "" {
-		req.Header.Set(headerCSRFToken, c.csrfToken)
-	}
-
-	if c.Security != nil {
-		req.AddCookie(c.Security)
-	}
-
-	return req, nil
-}
 
 // Executes creates a new Request with NewRequest and the given parameters and
 // immediately executes it with Do, which unmarshals the response body to v, if any.
