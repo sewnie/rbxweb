@@ -11,6 +11,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/url"
+	"strings"
 )
 
 const (
@@ -77,17 +78,14 @@ func Path(format string, query url.Values, a ...any) string {
 }
 
 // BareDo will execute the given HTTP request, leaving the response body
-// to be read by the user. If any error occurs, the respose body will be closed.
-// If a API error response is available, it will be returned as ErrorsResponse
-// or string for undocumented APIs, otherwise, a StatusError will be returned.
+// to be read by the user. If any error occurs, the respose body will be closed;
+// If a API error response is available, it will be returned as either an ErrorsResponse
+// or string error for undocumented APIs; if all else fails, a StatusError will be returned.
 //
 // If the response returned a security cookie or a X-CSRF-TOKEN header, it will
 // be used in future requests. If a request that failed returns this header, the
 // request will not be re-attempted.
 func (c *Client) BareDo(req *http.Request) (*http.Response, error) {
-	c.logInfo("Performing Request",
-		"method", req.Method, "path", req.URL.Path)
-
 	resp, err := c.Client.Do(req)
 	if err != nil {
 		return resp, err
@@ -105,10 +103,16 @@ func (c *Client) BareDo(req *http.Request) (*http.Response, error) {
 		c.logDebug("Recieved CSRF", "token", c.csrfToken)
 	}
 
-	if resp.StatusCode == http.StatusOK {
+	// Skip reading for an error if the response is acceptable
+	if resp.StatusCode >= http.StatusOK && resp.StatusCode < http.StatusMultipleChoices {
 		return resp, nil
 	}
 	defer resp.Body.Close()
+
+	content := resp.Header.Get("Content-Type")
+	if !strings.HasPrefix(content, "application/json") {
+		return resp, &StatusError{StatusCode: resp.StatusCode}
+	}
 
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -126,7 +130,8 @@ func (c *Client) BareDo(req *http.Request) (*http.Response, error) {
 		return resp, errors.New(errStr)
 	}
 
-	return resp, &StatusError{StatusCode: resp.StatusCode}
+	return resp, fmt.Errorf("unhandled error of %d: %s",
+		resp.StatusCode, string(data))
 }
 
 // Do will perform the given HTTP request on the client, and will write
