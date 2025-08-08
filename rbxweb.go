@@ -27,6 +27,7 @@ type Client struct {
 	http.Client
 	BaseDomain string
 
+	// Only for debugging purposes.
 	Logger *slog.Logger
 
 	Security  *http.Cookie
@@ -77,11 +78,10 @@ func Path(format string, query url.Values, a ...any) string {
 	return fmt.Sprintf(format, a...)
 }
 
-// NewRequest returns a new http.Request, with a path that will be relative
-// to the BaseDomain of the client, and a service - which can be empty, to indicate
-// the microservice to use. If body is specified, it will be interepreted as JSON
-// encoded and will be added to the request body. The security cookie will be added
-// to the request if available.
+// NewRequest returns a new API request with the given relative path and
+// the service (subdomain) to use with the BaseDomain of the Client. If a body
+// is specified, it will be added to the request body as JSON.
+// The security cookie and CSRF token will be added to the request if available.
 func (c *Client) NewRequest(method, service, path string, body any) (*http.Request, error) {
 	url := url.URL{
 		Scheme: "https",
@@ -133,14 +133,15 @@ func (c *Client) NewRequest(method, service, path string, body any) (*http.Reque
 	return req, nil
 }
 
-// BareDo will execute the given HTTP request, leaving the response body
-// to be read by the user. If any error occurs, the respose body will be closed;
-// If a API error response is available, it will be returned as either an ErrorsResponse
-// or string error for undocumented APIs; if all else fails, a StatusError will be returned.
+// Do performs the API request and returns the HTTP response. If any error occurs,
+// the respose body will be closed If a API error response is available, it will be
+// returned as either an ErrorsResponse or string error for undocumented APIs; if all
+// else fails, a StatusError will be returned. Otherwise, the user is responsible for
+// handling and closing the response body.
 //
 // If the response returned a security cookie or a X-CSRF-TOKEN header, it will
-// be used in future requests. If a request that failed returns this header, the
-// request will not be re-attempted.
+// be used in future requests. If a request rate limits or returns a header for
+// resending the request, it will be returned as is.
 func (c *Client) BareDo(req *http.Request) (*http.Response, error) {
 	resp, err := c.Client.Do(req)
 	if err != nil {
@@ -190,10 +191,10 @@ func (c *Client) BareDo(req *http.Request) (*http.Response, error) {
 		resp.StatusCode, string(data))
 }
 
-// Do will perform the given HTTP request on the client, and will write
-// the response body as necessary to v, if non-nil. In any case, the response
-// will always be returned as it is with a resulting error, if any.
+// Do performs the API request and returns the HTTP response and decodes
+// or writes the response to v, if non-nil, as necessary.
 // The response body of the HTTP request is always going to be closed.
+// See [BareDo] for more details.
 func (c *Client) Do(req *http.Request, v any) (*http.Response, error) {
 	resp, err := c.BareDo(req)
 	if err != nil {
@@ -203,27 +204,18 @@ func (c *Client) Do(req *http.Request, v any) (*http.Response, error) {
 
 	switch v := v.(type) {
 	case nil:
-		return resp, nil
 	case io.Writer:
-		if c.logIsDebug() {
-			b, _ := io.ReadAll(resp.Body)
-			c.logDebug("Response", "status", resp.StatusCode, "data", string(b))
-			v.Write(b)
-			return resp, nil
-		}
+		c.logDebug("Response", "status", resp.StatusCode,
+			"content", resp.Header.Get("Content-Type"))
 		_, err = io.Copy(v, resp.Body)
-		return resp, err
 	default:
 		err = json.NewDecoder(resp.Body).Decode(v)
 		c.logDebug("Response", "status", resp.StatusCode, "data", v)
-		return resp, err
 	}
+	return resp, err
 }
 
-
-
-// Executes creates a new Request with NewRequest and the given parameters and
-// immediately executes it with Do, which unmarshals the response body to v, if any.
+// Executes wraps around NewRequest and Do for immediate execution of a request.
 func (c *Client) Execute(method, service, path string, body any, v any) error {
 	req, err := c.NewRequest(method, service, path, body)
 	if err != nil {
@@ -270,8 +262,4 @@ func (c *Client) logError(msg string, args ...any) {
 	if c.Logger != nil {
 		c.Logger.Error("rbxweb: "+msg, args...)
 	}
-}
-
-func (c *Client) logIsDebug() bool {
-	return c.Logger != nil && c.Logger.Enabled(nil, slog.LevelDebug)
 }
