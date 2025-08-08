@@ -229,6 +229,51 @@ func (c *Client) Execute(method, service, path string, body any, v any) error {
 	return nil
 }
 
+// StatusError represents an unexpected HTTP error, in the case
+// that a ErrorResponse was unable to be parsed.
+type StatusError struct {
+	StatusCode int
+}
+
+func (e *StatusError) Error() string {
+	return fmt.Sprintf("bad response: %s", http.StatusText(e.StatusCode))
+}
+
+// Error implements the error response model of the API.
+type Error struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+	Field   string `json:"field,omitempty"`
+}
+
+// errorsResponse implements the errors response model of the API.
+type Errors struct {
+	Errors []Error `json:"errors,omitempty"`
+}
+
+// Error implements the error interface.
+func (err Error) Error() string {
+	return fmt.Sprintf("response code %d: %s", err.Code, err.Message)
+}
+
+// Error implemements the error interface.
+func (errs Errors) Error() string {
+	s := make([]string, len(errs.Errors))
+	for i, e := range errs.Errors {
+		s[i] = e.Error()
+	}
+	return strings.Join(s, "; ")
+}
+
+// Unwrap implements the Unwrap interface by returning the first error in the
+// list.
+func (errs Errors) Unwrap() error {
+	if len(errs.Errors) == 0 {
+		return nil
+	}
+	return errs.Errors[0]
+}
+
 // rbxweb does not automatically retry a request if it requires a XSRF token, instead
 // endpoints that require this must use it beforehand for easier API usage.
 // in the future, automatically using the recieved XSRF token upon a "XSRF token invalid"
@@ -240,6 +285,7 @@ func (c *Client) csrfRequired() error {
 	return c.AuthV2.setCSRFToken()
 }
 
+// TODO: replace with user-logged http.Transport
 func (c *Client) logDebug(msg string, args ...any) {
 	if c.Logger != nil {
 		c.Logger.Debug("rbxweb: "+msg, args...)
@@ -262,4 +308,26 @@ func (c *Client) logError(msg string, args ...any) {
 	if c.Logger != nil {
 		c.Logger.Error("rbxweb: "+msg, args...)
 	}
+}
+
+func formatSlice[T any](values []T) []string {
+	if len(values) == 0 {
+		return nil
+	}
+
+	s := make([]string, len(values))
+	for i, v := range values {
+		s[i] = fmt.Sprintf("%v", v)
+	}
+	return s
+}
+
+func getList[T any](v []T, err error) (*T, error) {
+	if err != nil {
+		return nil, err
+	}
+	if len(v) == 0 {
+		return nil, nil
+	}
+	return &v[0], nil
 }
