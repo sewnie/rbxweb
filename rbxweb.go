@@ -181,14 +181,17 @@ func (c *Client) BareDo(req *http.Request) (*http.Response, error) {
 		return resp, &StatusError{StatusCode: resp.StatusCode}
 	}
 
+	dec := json.NewDecoder(bytes.NewReader(data))
+	dec.DisallowUnknownFields()
+
 	errResp := new(Errors)
-	if err := json.Unmarshal(data, errResp); err == nil {
+	if err := dec.Decode(errResp); err == nil {
 		return resp, fmt.Errorf("api errors: %w", errResp)
 	}
 
 	// Some undocumented APIs return a single string as an error
 	var errStr string
-	if err := json.Unmarshal(data, &errStr); err == nil {
+	if err := dec.Decode(&errStr); err == nil {
 		return resp, errors.New(errStr)
 	}
 
