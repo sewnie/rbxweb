@@ -51,3 +51,16 @@ func (a *AuthTokenServiceV1) GetTokenStatus(t *Token) (*TokenStatus, error) {
 
 	return &s, nil
 }
+
+// Cancel discards and stops a Token from being used in authentication.
+func (a *AuthTokenServiceV1) CancelToken(t *Token) error {
+	req := struct {
+		Code string `json:"code"`
+	}{t.Code}
+
+	if err := a.Client.csrfRequired(); err != nil {
+		return err
+	}
+
+	return a.Client.Execute("POST", "apis", "auth-token-service/v1/login/cancel", req, nil)
+}
