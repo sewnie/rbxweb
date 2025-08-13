@@ -39,6 +39,7 @@ type Client struct {
 	ThumbnailsV1     *ThumbnailsServiceV1
 	UsersV1          *UsersServiceV1
 	AuthV2           *AuthServiceV2
+	OAuthV1          *OAuthServiceV1
 	ClientSettingsV2 *ClientSettingsServiceV2
 	AuthTokenV1      *AuthTokenServiceV1
 }
@@ -59,6 +60,7 @@ func NewClient() *Client {
 	c.ThumbnailsV1 = (*ThumbnailsServiceV1)(&c.common)
 	c.UsersV1 = (*UsersServiceV1)(&c.common)
 	c.AuthV2 = (*AuthServiceV2)(&c.common)
+	c.OAuthV1 = (*OAuthServiceV1)(&c.common)
 	c.ClientSettingsV2 = (*ClientSettingsServiceV2)(&c.common)
 	c.AuthTokenV1 = (*AuthTokenServiceV1)(&c.common)
 
