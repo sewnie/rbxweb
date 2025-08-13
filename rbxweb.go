@@ -105,7 +105,7 @@ func (c *Client) NewRequest(method, service, path string, body any) (*http.Reque
 	}
 
 	c.logDebug("New Request",
-		"service", service, "method", method, "body", buf.String())
+		"method", method, "service", service, "path", path, "body", body)
 
 	req, err := http.NewRequest(method, url.String(), buf)
 	if err != nil {
