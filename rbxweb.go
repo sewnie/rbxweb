@@ -82,40 +82,49 @@ func path(format string, query url.Values, a ...any) string {
 
 // NewRequest returns a new API request with the given relative path and
 // the service (subdomain) to use with the BaseDomain of the Client. If a body
-// is specified, it will be added to the request body as JSON.
+// is specified, and it is of type [url.Values], it will be added to the request
+// as application/x-www-form-urlencoded, otherwise, the body is used as
+// application/json if non-nil.
+//
+// The request returned expects a application/json.
+//
 // The security cookie and CSRF token will be added to the request if available.
 func (c *Client) NewRequest(method, service, path string, body any) (*http.Request, error) {
-	url := url.URL{
+	u := url.URL{
 		Scheme: "https",
 		Host:   c.BaseDomain,
 		Path:   path,
 	}
 	if service != "" {
-		url.Host = service + "." + url.Host
+		u.Host = service + "." + u.Host
 	}
 
 	buf := new(bytes.Buffer)
-	if body != nil {
+	content := ""
+	if v, ok := body.(url.Values); ok {
+		buf.WriteString(v.Encode())
+		content = "application/x-www-form-urlencoded"
+	} else if body != nil {
 		enc := json.NewEncoder(buf)
 		enc.SetEscapeHTML(false)
 		if err := enc.Encode(body); err != nil {
 			return nil, err
 		}
-		buf.Truncate(buf.Len() - 1)
+		content = "application/json"
 	}
 
 	c.logDebug("New Request",
-		"method", method, "service", service, "path", path, "body", body)
+		"method", method, "service", service, "path", path, "body", buf.String())
 
-	req, err := http.NewRequest(method, url.String(), buf)
+	req, err := http.NewRequest(method, u.String(), buf)
 	if err != nil {
 		return nil, err
 	}
 
 	req.Header.Set("User-Agent", "rbxweb/v0.0.0")
 
-	if body != nil {
-		req.Header.Set("Content-Type", "application/json")
+	if content != "" {
+		req.Header.Set("Content-Type", content)
 	}
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Accept-Encoding", "identity")
