@@ -30,7 +30,7 @@ type Client struct {
 	// Only for debugging purposes.
 	Logger *slog.Logger
 
-	Security  *http.Cookie
+	Security  string
 	csrfToken string
 
 	common service // Reuse a single struct instead of allocating one for each service on the heap.
@@ -126,8 +126,11 @@ func (c *Client) NewRequest(method, service, path string, body any) (*http.Reque
 		req.Header.Set(headerCSRFToken, c.csrfToken)
 	}
 
-	if c.Security != nil {
-		req.AddCookie(c.Security)
+	if c.Security != "" {
+		req.AddCookie(&http.Cookie{
+			Name:  cookieSecurity,
+			Value: c.Security,
+		})
 	}
 
 	return req, nil
@@ -151,7 +154,7 @@ func (c *Client) BareDo(req *http.Request) (*http.Response, error) {
 	for _, cookie := range resp.Cookies() {
 		if cookie.Name == cookieSecurity {
 			c.logDebug("Recieved " + cookieSecurity)
-			c.Security = cookie
+			c.Security = cookie.Value
 		}
 	}
 
