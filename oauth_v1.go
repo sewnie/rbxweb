@@ -1,13 +1,16 @@
 package rbxweb
 
 import (
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/base64"
+	"encoding/json"
 	"strconv"
 )
 
 // OauthServiceV1 partially handles the 'oauth/v1' Roblox Web API.
 type OAuthServiceV1 service
 
-// PermissionScope implements an unknown API model for OAuth permission scopes.
 type PermissionScope struct {
 	// One of "openid", "profile", "email", "verification", "credentials", "age", "premium", "roles".
 	Type string `json:"scopeType"`
@@ -31,14 +34,38 @@ type PermissionResourceInfo struct {
 // it is only being used to return a roblox-studio-auth URI until more documentation
 // or uses are found.
 func (o *OAuthServiceV1) GetAuthorizations(clientID string, userID UserID) (string, error) {
+	codeRaw := make([]byte, 32)
+	_, err := rand.Read(codeRaw)
+	if err != nil {
+		return "", err
+	}
+	code := base64.RawURLEncoding.EncodeToString(codeRaw)
+
+	h := sha256.Sum256([]byte(code))
+	challenge := base64.RawURLEncoding.EncodeToString(h[:])
+
+	stateRaw := map[string]string{
+		"random_string": code,
+		"pid":           "220",
+	}
+	stateJSON, _ := json.Marshal(stateRaw)
+	state := base64.RawURLEncoding.EncodeToString(stateJSON)
+
 	data := struct {
-		ClientID      string                   `json:"clientId"`      // Retrieved from Studio OAuth2Config.json
+		ClientID      string                   `json:"clientId"` // Retrieved from Studio OAuth2Config.json
+		Challenge     string                   `json:"codeChallenge"`
+		Method        string                   `json:"codeChallengeMethod"`
+		Nonce         string                   `json:"nonce"`
 		ResponseTypes []string                 `json:"responseTypes"` // One of "Code", "None"
 		RedirectURI   string                   `json:"redirectUri"`
 		Scopes        []PermissionScope        `json:"scopes"`
+		State         string                   `json:"state"`
 		ResourceInfos []PermissionResourceInfo `json:"resourceInfos"`
 	}{
 		ClientID:      clientID,
+		Challenge:     challenge,
+		Method:        "S256",
+		Nonce:         "id-roblox",
 		ResponseTypes: []string{"Code"},
 		RedirectURI:   "roblox-studio-auth:/",
 		Scopes: []PermissionScope{
@@ -49,6 +76,7 @@ func (o *OAuthServiceV1) GetAuthorizations(clientID string, userID UserID) (stri
 			{Type: "roles", Operations: []string{"read"}},
 			{Type: "premium", Operations: []string{"read"}},
 		},
+		State: state,
 		ResourceInfos: []PermissionResourceInfo{
 			{
 				Owner: PermissionResourceOwner{
@@ -59,6 +87,7 @@ func (o *OAuthServiceV1) GetAuthorizations(clientID string, userID UserID) (stri
 			},
 		},
 	}
+
 	respData := struct {
 		Location string `json:"location"`
 	}{}
@@ -67,7 +96,7 @@ func (o *OAuthServiceV1) GetAuthorizations(clientID string, userID UserID) (stri
 		return "", err
 	}
 
-	err := o.Client.Execute("POST", "apis", "oauth/v1/authorizations", data, &respData)
+	err = o.Client.Execute("POST", "apis", "oauth/v1/authorizations", data, &respData)
 	if err != nil {
 		return "", err
 	}
