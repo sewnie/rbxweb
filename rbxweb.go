@@ -3,7 +3,6 @@ package rbxweb
 
 import (
 	"bytes"
-	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -39,11 +38,6 @@ type Client struct {
 func NewClient() *Client {
 	c := &Client{
 		BaseDomain: "roblox.com",
-
-		Client: http.Client{Transport: &http.Transport{
-			// Fixes authentication endpoints
-			TLSClientConfig: &tls.Config{},
-		}},
 	}
 
 	c.common.Client = c
@@ -137,32 +131,40 @@ func (c *Client) NewRequest(method, service, path string, body any) (*http.Reque
 // else fails, a StatusError will be returned. Otherwise, the user is responsible for
 // handling and closing the response body.
 //
-// If the response returned a security cookie or a X-CSRF-TOKEN header, it will
-// be used in future requests. If a request rate limits or returns a header for
-// resending the request, it will be returned as is.
+// If the response returned a security cookie it will be used in future requests.
+//
+// If the request fails with 403 and returns X-CSRF-TOKEN, GetBody will be used from the
+// request, as the underlying type made from [NewRequest] is bytes.Buffer, and the
+// request will be tried again with the new X-CSRF-TOKEN, It will also be stored
+// and used for future requests until the cycle occurs again.
 func (c *Client) BareDo(req *http.Request) (*http.Response, error) {
 	resp, err := c.Client.Do(req)
 	if err != nil {
 		return resp, err
 	}
 
-	for _, cookie := range resp.Cookies() {
-		if cookie.Name == ".ROBLOSECURITY" {
-			c.Security = cookie.Value
-		}
-	}
-
 	t := resp.Header.Get("X-CSRF-TOKEN")
-	if t != "" && resp.StatusCode == http.StatusForbidden { // Retry the request
+	if t != "" && resp.StatusCode == http.StatusForbidden {
 		resp.Body.Close()
-		req = req.Clone(req.Context())
 		c.Token = t
+
+		req = req.Clone(req.Context())
 		req.Header.Set("X-CSRF-TOKEN", c.Token)
-		// Somehow, with the original request body gone, retrying the request
-		// seemingly still works, as Roblox might be keeping the original data sent.
+		if req.GetBody != nil {
+			req.Body, err = req.GetBody()
+			if err != nil {
+				return nil, err
+			}
+		}
 		resp, err = c.Client.Do(req)
 		if err != nil {
 			return resp, err
+		}
+	}
+
+	for _, cookie := range resp.Cookies() {
+		if cookie.Name == ".ROBLOSECURITY" {
+			c.Security = cookie.Value
 		}
 	}
 
