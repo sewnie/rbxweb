@@ -40,10 +40,6 @@ func (a *AuthTokenServiceV1) GetTokenStatus(t *Token) (*TokenStatus, error) {
 		PrivateKey string `json:"privateKey"`
 	}{t.Code, t.PrivateKey}
 
-	if err := a.Client.csrfRequired(); err != nil {
-		return nil, err
-	}
-
 	err := a.Client.Execute("POST", "apis", "auth-token-service/v1/login/status", req, &s)
 	if err != nil {
 		return nil, err
@@ -57,10 +53,6 @@ func (a *AuthTokenServiceV1) CancelToken(t *Token) error {
 	req := struct {
 		Code string `json:"code"`
 	}{t.Code}
-
-	if err := a.Client.csrfRequired(); err != nil {
-		return err
-	}
 
 	return a.Client.Execute("POST", "apis", "auth-token-service/v1/login/cancel", req, nil)
 }

@@ -36,10 +36,6 @@ type Login struct {
 // If logging in with a Token, set the login type to LoginTypeToken, the value to
 // the token's code, and the password to the token's private key.
 func (a *AuthServiceV2) CreateLogin(value, password string, login LoginType) (*Login, error) {
-	if err := a.Client.csrfRequired(); err != nil {
-		return nil, err
-	}
-
 	lreq := struct {
 		CType    string `json:"ctype"`
 		CValue   string `json:"cvalue"`

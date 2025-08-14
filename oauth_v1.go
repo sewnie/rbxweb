@@ -53,10 +53,6 @@ func (o *OAuthServiceV1) AuthStudioToken(c OAuthClientID, u *AuthStudioURL) (*OA
 	q.Add("client_id", string(c))
 	q.Add("code_verifier", u.Verifier)
 
-	if err := o.Client.csrfRequired(); err != nil {
-		return nil, err
-	}
-
 	t := new(OAuthToken)
 	err := o.Client.Execute("POST", "apis", "oauth/v1/token", q, &t)
 	if err != nil {
@@ -136,10 +132,6 @@ func (o *OAuthServiceV1) GetAuthStudioURL(c OAuthClientID, userID UserID) (*Auth
 	respData := struct {
 		Location string `json:"location"`
 	}{}
-
-	if err := o.Client.csrfRequired(); err != nil {
-		return nil, err
-	}
 
 	err = o.Client.Execute("POST", "apis", "oauth/v1/authorizations", data, &respData)
 	if err != nil {
