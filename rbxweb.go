@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log/slog"
 	"net/http"
 	"net/url"
 	"strings"
@@ -26,9 +25,6 @@ const (
 type Client struct {
 	http.Client
 	BaseDomain string
-
-	// Only for debugging purposes.
-	Logger *slog.Logger
 
 	Security  string
 	csrfToken string
@@ -113,9 +109,6 @@ func (c *Client) NewRequest(method, service, path string, body any) (*http.Reque
 		content = "application/json"
 	}
 
-	c.logDebug("New Request",
-		"method", method, "service", service, "path", path, "body", buf.String())
-
 	req, err := http.NewRequest(method, u.String(), buf)
 	if err != nil {
 		return nil, err
@@ -164,14 +157,12 @@ func (c *Client) BareDo(req *http.Request) (*http.Response, error) {
 
 	for _, cookie := range resp.Cookies() {
 		if cookie.Name == cookieSecurity {
-			c.logDebug("Recieved " + cookieSecurity)
 			c.Security = cookie.Value
 		}
 	}
 
 	if t := resp.Header.Get(headerCSRFToken); t != "" {
 		c.csrfToken = t
-		c.logDebug("Recieved CSRF", "token", c.csrfToken)
 	}
 
 	// Skip reading for an error if the response is acceptable
@@ -221,12 +212,9 @@ func (c *Client) Do(req *http.Request, v any) (*http.Response, error) {
 	switch v := v.(type) {
 	case nil:
 	case io.Writer:
-		c.logDebug("Response", "status", resp.StatusCode,
-			"content", resp.Header.Get("Content-Type"))
 		_, err = io.Copy(v, resp.Body)
 	default:
 		err = json.NewDecoder(resp.Body).Decode(v)
-		c.logDebug("Response", "status", resp.StatusCode, "data", v)
 	}
 	return resp, err
 }
@@ -315,31 +303,6 @@ func (c *Client) csrfRequired() error {
 	}
 
 	return err
-}
-
-// TODO: replace with user-logged http.Transport
-func (c *Client) logDebug(msg string, args ...any) {
-	if c.Logger != nil {
-		c.Logger.Debug("rbxweb: "+msg, args...)
-	}
-}
-
-func (c *Client) logInfo(msg string, args ...any) {
-	if c.Logger != nil {
-		c.Logger.Info("rbxweb: "+msg, args...)
-	}
-}
-
-func (c *Client) logWarn(msg string, args ...any) {
-	if c.Logger != nil {
-		c.Logger.Warn("rbxweb: "+msg, args...)
-	}
-}
-
-func (c *Client) logError(msg string, args ...any) {
-	if c.Logger != nil {
-		c.Logger.Error("rbxweb: "+msg, args...)
-	}
 }
 
 func formatSlice[T any](values []T) []string {
