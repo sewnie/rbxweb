@@ -186,9 +186,9 @@ func (c *Client) BareDo(req *http.Request) (*http.Response, error) {
 
 	dec := json.NewDecoder(bytes.NewReader(data))
 	dec.DisallowUnknownFields()
-	errResp := new(Errors)
-	if err := dec.Decode(errResp); err == nil {
-		return resp, fmt.Errorf("api errors: %w", errResp)
+	errsResp := new(Errors)
+	if err := dec.Decode(errsResp); err == nil {
+		return resp, errsResp
 	}
 
 	// Some undocumented APIs return a single string as an error
