@@ -45,20 +45,22 @@ func (cv ClientVersion) String() string {
 }
 
 // AssignmentType represents how the user was bound to a channel.
-type AssignmentType string
+type AssignmentType int
 
 const (
-	AssignmentTypeNone     AssignmentType = "None"
-	AssignmentTypePerMille AssignmentType = "PerMille"
-	AssignmentTypePrivate  AssignmentType = "BoundToPrivateChannel"
-	AssignmentTypePublic   AssignmentType = "BoundToPublicChannel"
+	AssignmentTypeNone AssignmentType = iota
+	AssignmentTypePerMille
+	AssignmentTypeBoundToPrivateChannel
+	AssignmentTypeBoundToPublicChannel
+	AssignmentTypeOptedInToBetaProgramWithPrivateChannel
+	AssignmentTypeOptedInToBetaProgramWithPublicChannel
 )
 
 // UserChannel implements the UserChannelResponse API model.
 type UserChannel struct {
 	Channel    string         `json:"channelName"`
 	Assignment AssignmentType `json:"channelAssignmentType"`
-	Token      string         `json:"token"`
+	Token      string         `json:"token,omitempty"`
 }
 
 // GetClientVersion gets the client version information for the named
