@@ -94,7 +94,7 @@ func (c *Client) NewRequest(method, service, path string, body any) (*http.Reque
 	if service != "" {
 		url += service + `.`
 	}
-	url += c.BaseDomain + path
+	url += c.BaseDomain + "/" + path
 
 	req, err := http.NewRequest(method, url, buf)
 	if err != nil {

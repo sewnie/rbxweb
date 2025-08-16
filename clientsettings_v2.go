@@ -93,7 +93,7 @@ func (c *ClientSettingsServiceV2) GetUserChannel(bt *BinaryType) (*UserChannel, 
 	}
 
 	err := c.Client.Execute("GET",
-		"clientsettings", path("/v2/user-channel", q), nil, &uc)
+		"clientsettings", path("v2/user-channel", q), nil, &uc)
 	if err != nil {
 		return nil, err
 	}
