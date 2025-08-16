@@ -75,15 +75,6 @@ func path(format string, query url.Values, a ...any) string {
 //
 // The security cookie and CSRF token will be added to the request if available.
 func (c *Client) NewRequest(method, service, path string, body any) (*http.Request, error) {
-	u := url.URL{
-		Scheme: "https",
-		Host:   c.BaseDomain,
-		Path:   path,
-	}
-	if service != "" {
-		u.Host = service + "." + u.Host
-	}
-
 	buf := new(bytes.Buffer)
 	content := ""
 	if v, ok := body.(url.Values); ok {
@@ -98,7 +89,14 @@ func (c *Client) NewRequest(method, service, path string, body any) (*http.Reque
 		content = "application/json"
 	}
 
-	req, err := http.NewRequest(method, u.String(), buf)
+	// Avoid using url.URL as to keep the encoded query from [path]
+	url := "https://"
+	if service != "" {
+		url += service + `.`
+	}
+	url += c.BaseDomain + path
+
+	req, err := http.NewRequest(method, url, buf)
 	if err != nil {
 		return nil, err
 	}
