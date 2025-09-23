@@ -18,15 +18,14 @@ type Login struct {
 		Name        string `json:"name"`
 		DisplayName string `json:"displayName"`
 	} `json:"user"`
-	Verification struct {
+	Verification *struct {
 		Type   VerificationType `json:"mediaType"`
 		Ticket string           `json:"ticket"`
-	} `json:"twoStepVerificationData"`
-	Ticket            string `json:"identityVerificationLoginTicket"`
+	} `json:"twoStepVerificationData,omitempty"`
 	Banned            bool   `json:"isBanned"`
 	AccountBlob       string `json:"accountBlob"`
 	ShouldUpdateEmail bool   `json:"shouldUpdateEmail"`
-	RecoveryEmail     string `json:"recoveryEmail"`
+	RecoveryEmail     string `json:"recoveryEmail,omitempty"`
 }
 
 // CreateLogin logins as the user with the given Token.

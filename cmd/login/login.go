@@ -61,8 +61,7 @@ func main() {
 
 		log.Printf("%+v", l)
 
-		switch l.Verification.Type {
-		case rbxweb.VerificationTypeEmail, rbxweb.VerificationTypeAuthenticator:
+		if v := l.Verification; v != nil {
 			code := readPrompt("Code:")
 
 			tsToken, err := c.VerificationServiceV1.CreateToken(l, code)
@@ -76,8 +75,9 @@ func main() {
 				log.Fatalln("verify login:", err)
 			}
 			log.Printf("%+v", tsLogin)
-			os.Exit(0)
 		}
+
+		os.Exit(0)
 	}
 
 	t, err := c.AuthTokenV1.CreateToken()
