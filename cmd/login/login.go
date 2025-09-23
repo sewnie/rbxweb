@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"io"
 	"log"
@@ -53,7 +54,30 @@ func main() {
 	}
 
 	if len(os.Args) == 3 {
-		log.Fatal(c.AuthV2.CreateLogin(os.Args[1], os.Args[2], rbxweb.LoginTypeUsername))
+		l, err := c.AuthV2.CreateLogin(os.Args[1], os.Args[2], rbxweb.LoginTypeUsername)
+		if err != nil {
+			log.Fatalln("login create:", err)
+		}
+
+		log.Printf("%+v", l)
+
+		switch l.Verification.Type {
+		case rbxweb.VerificationTypeEmail, rbxweb.VerificationTypeAuthenticator:
+			code := readPrompt("Code:")
+
+			tsToken, err := c.VerificationServiceV1.CreateToken(l, code)
+			if err != nil {
+				log.Fatalln("verify:", err)
+			}
+			log.Printf("%+v", tsToken)
+
+			tsLogin, err := c.AuthV3.CreateTwoStepLogin(false, tsToken)
+			if err != nil {
+				log.Fatalln("verify login:", err)
+			}
+			log.Printf("%+v", tsLogin)
+			os.Exit(0)
+		}
 	}
 
 	t, err := c.AuthTokenV1.CreateToken()
@@ -76,4 +100,21 @@ func main() {
 	}
 
 	log.Fatal(c.AuthV2.CreateLogin(t.Code, t.PrivateKey, rbxweb.LoginTypeToken))
+}
+
+func readPrompt(format string, a ...any) string {
+	log.Printf(format, a...)
+	scanner := bufio.NewScanner(os.Stdin)
+	scanner.Scan()
+	err := scanner.Err()
+	if err != nil {
+		log.Fatalln("scanner:", err)
+	}
+
+	data := scanner.Text()
+	if len(data) == 0 {
+		log.Fatal("zero length input")
+	}
+
+	return data
 }

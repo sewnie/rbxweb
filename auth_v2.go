@@ -14,26 +14,22 @@ const (
 // Login implements the LoginRequest API model.
 type Login struct {
 	User struct {
-		ID          int    `json:"id"`
+		ID          UserID `json:"id"`
 		Name        string `json:"name"`
 		DisplayName string `json:"displayName"`
 	} `json:"user"`
-	TwoStepVerificationData struct {
-		MediaType int    `json:"mediaType"`
-		Ticket    string `json:"ticket"`
+	Verification struct {
+		Type   VerificationType `json:"mediaType"`
+		Ticket string           `json:"ticket"`
 	} `json:"twoStepVerificationData"`
-	IdentityVerificationLoginTicket string `json:"identityVerificationLoginTicket"`
-	IsBanned                        bool   `json:"isBanned"`
-	AccountBlob                     string `json:"accountBlob"`
-	ShouldUpdateEmail               bool   `json:"shouldUpdateEmail"`
-	RecoveryEmail                   string `json:"recoveryEmail"`
+	Ticket            string `json:"identityVerificationLoginTicket"`
+	Banned            bool   `json:"isBanned"`
+	AccountBlob       string `json:"accountBlob"`
+	ShouldUpdateEmail bool   `json:"shouldUpdateEmail"`
+	RecoveryEmail     string `json:"recoveryEmail"`
 }
 
 // CreateLogin logins as the user with the given Token.
-//
-// If logging in with a username and password, set value and password to a
-// username and password, and force the request to be downgraded to HTTP/1.1
-// by providing the Client with a custom transport. This is unconfirmed.
 //
 // If logging in with a Token, set the login type to LoginTypeToken, the value to
 // the token's code, and the password to the token's private key.

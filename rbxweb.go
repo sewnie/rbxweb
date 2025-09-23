@@ -25,13 +25,15 @@ type Client struct {
 
 	common service // Reuse a single struct instead of allocating one for each service on the heap.
 
-	GamesV1          *GamesServiceV1
-	ThumbnailsV1     *ThumbnailsServiceV1
-	UsersV1          *UsersServiceV1
-	AuthV2           *AuthServiceV2
-	OAuthV1          *OAuthServiceV1
-	ClientSettingsV2 *ClientSettingsServiceV2
-	AuthTokenV1      *AuthTokenServiceV1
+	GamesV1               *GamesServiceV1
+	ThumbnailsV1          *ThumbnailsServiceV1
+	UsersV1               *UsersServiceV1
+	AuthV2                *AuthServiceV2
+	AuthV3                *AuthServiceV3
+	OAuthV1               *OAuthServiceV1
+	ClientSettingsV2      *ClientSettingsServiceV2
+	AuthTokenV1           *AuthTokenServiceV1
+	VerificationServiceV1 *TwoStepVerificationServiceV1
 }
 
 // NewClient returns a new Client.
@@ -45,9 +47,11 @@ func NewClient() *Client {
 	c.ThumbnailsV1 = (*ThumbnailsServiceV1)(&c.common)
 	c.UsersV1 = (*UsersServiceV1)(&c.common)
 	c.AuthV2 = (*AuthServiceV2)(&c.common)
+	c.AuthV3 = (*AuthServiceV3)(&c.common)
 	c.OAuthV1 = (*OAuthServiceV1)(&c.common)
 	c.ClientSettingsV2 = (*ClientSettingsServiceV2)(&c.common)
 	c.AuthTokenV1 = (*AuthTokenServiceV1)(&c.common)
+	c.VerificationServiceV1 = (*TwoStepVerificationServiceV1)(&c.common)
 
 	return c
 }
